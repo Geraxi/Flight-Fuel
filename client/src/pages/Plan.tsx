@@ -1,10 +1,13 @@
 import { PLAN_PHASES } from "@/lib/mockData";
-import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity } from "lucide-react";
+import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity, MapPin, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addDays, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { format, addDays, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addHours, addMinutes } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const iconMap = {
   Coffee,
@@ -12,6 +15,39 @@ const iconMap = {
   Utensils,
   Moon
 };
+
+const AIRPORTS: Record<string, { lat: number, lon: number, name: string }> = {
+  "LHR": { lat: 51.4700, lon: -0.4543, name: "London Heathrow" },
+  "JFK": { lat: 40.6413, lon: -73.7781, name: "New York JFK" },
+  "DXB": { lat: 25.2532, lon: 55.3657, name: "Dubai Int" },
+  "SIN": { lat: 1.3644, lon: 103.9915, name: "Singapore Changi" },
+  "LAX": { lat: 33.9416, lon: -118.4085, name: "Los Angeles Int" },
+  "HND": { lat: 35.5494, lon: 139.7798, name: "Tokyo Haneda" },
+  "SYD": { lat: -33.9399, lon: 151.1753, name: "Sydney Kingsford Smith" },
+  "FRA": { lat: 50.0379, lon: 8.5622, name: "Frankfurt" },
+  "CDG": { lat: 49.0097, lon: 2.5479, name: "Paris Charles de Gaulle" },
+  "AMS": { lat: 52.3105, lon: 4.7683, name: "Amsterdam Schiphol" },
+  "MIA": { lat: 25.7959, lon: -80.2870, name: "Miami Int" },
+  "SFO": { lat: 37.6213, lon: -122.3790, name: "San Francisco Int" }
+};
+
+// Haversine formula to calculate distance in km
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number) {
+  return deg * (Math.PI/180)
+}
 
 // Mock data generation
 const generateMockData = () => {
@@ -55,6 +91,84 @@ export default function Plan() {
   const [stats] = useState(initialData.stats);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Flight Calculator State
+  const [origin, setOrigin] = useState<string>("LHR");
+  const [destination, setDestination] = useState<string>("JFK");
+  const [activePlan, setActivePlan] = useState<any[]>(PLAN_PHASES);
+  const [flightTime, setFlightTime] = useState<string>("07:30");
+  const [isCalculated, setIsCalculated] = useState(false);
+
+  const calculateFlight = () => {
+    if (!AIRPORTS[origin] || !AIRPORTS[destination]) return;
+
+    const start = AIRPORTS[origin];
+    const end = AIRPORTS[destination];
+    
+    const distance = calculateDistance(start.lat, start.lon, end.lat, end.lon);
+    const speed = 850; // km/h avg cruise speed
+    const durationHours = distance / speed;
+    
+    const hours = Math.floor(durationHours);
+    const minutes = Math.round((durationHours - hours) * 60);
+    
+    const durationStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    setFlightTime(durationStr);
+    
+    // Generate new schedule based on duration
+    // Start time assumed 08:00 for simplicity in this prototype, or current time
+    // For demo purposes, we will just shift the static phases to match duration more realistically
+    
+    const newPhases = [
+        {
+            time: "PRE-FLIGHT (-02:00)",
+            phase: "Pre-Duty Fueling",
+            guidance: "Complex carbs + moderate protein. Hydrate with electrolytes.",
+            icon: "Coffee",
+            macros: { protein: 30, carbs: 50, fat: 15 },
+            foodEquivalents: PLAN_PHASES[0].foodEquivalents
+        },
+        {
+            time: `FLIGHT (00:00 - ${durationStr})`,
+            phase: "Cruise Operations",
+            guidance: `Duration: ${hours}h ${minutes}m. Eat light every 2-3 hours. Avoid heavy fats.`,
+            icon: "Plane",
+            macros: { protein: 25, carbs: 35, fat: 10 },
+            foodEquivalents: PLAN_PHASES[1].foodEquivalents
+        },
+        {
+            time: "POST-LANDING (+01:00)",
+            phase: "Recovery Meal",
+            guidance: "High protein + carbs to replenish glycogen. Adaptation strategy.",
+            icon: "Utensils",
+            macros: { protein: 40, carbs: 60, fat: 10 },
+            foodEquivalents: PLAN_PHASES[2].foodEquivalents
+        },
+        {
+            time: "REST PERIOD",
+            phase: "Sleep Protocol",
+            guidance: "Magnesium + Sleep hygiene. Dark room. No screens 1h before bed.",
+            icon: "Moon",
+            macros: { protein: 25, carbs: 10, fat: 5 },
+            foodEquivalents: PLAN_PHASES[3].foodEquivalents
+        }
+    ];
+
+    if (hours > 8) {
+        // Add a second meal for long haul
+        newPhases.splice(2, 0, {
+            time: "CRUISE MEAL 2",
+            phase: "Mid-Flight Fuel",
+            guidance: "Protein rich snack/meal to maintain alertness.",
+            icon: "Utensils",
+            macros: { protein: 25, carbs: 20, fat: 10 },
+            foodEquivalents: PLAN_PHASES[1].foodEquivalents
+        });
+    }
+
+    setActivePlan(newPhases);
+    setIsCalculated(true);
+  };
+
   const toggleVariation = (index: number, max: number) => {
     setMealVariations(prev => ({
       ...prev,
@@ -82,8 +196,74 @@ export default function Plan() {
 
   // View Components
   const DailyView = () => (
+    <div className="space-y-6">
+       {/* Flight Calculator Section */}
+       <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+             <div className="bg-primary/10 p-2 rounded-full">
+                <Plane className="w-4 h-4 text-primary" />
+             </div>
+             <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider">Active Sector</h3>
+                <p className="text-[10px] text-muted-foreground font-mono">CALCULATE FLIGHT & NUTRITION</p>
+             </div>
+          </div>
+          
+          <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-end mb-4">
+             <div className="space-y-1.5">
+                <Label className="text-[10px] font-mono text-muted-foreground uppercase">Origin</Label>
+                <Select value={origin} onValueChange={setOrigin}>
+                  <SelectTrigger className="h-9 font-mono text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(AIRPORTS).sort().map(code => (
+                       <SelectItem key={code} value={code} className="font-mono text-xs">
+                          {code}
+                       </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+             </div>
+             
+             <div className="pb-2 text-muted-foreground">
+                <ArrowRight className="w-4 h-4" />
+             </div>
+             
+             <div className="space-y-1.5">
+                <Label className="text-[10px] font-mono text-muted-foreground uppercase">Dest</Label>
+                <Select value={destination} onValueChange={setDestination}>
+                  <SelectTrigger className="h-9 font-mono text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(AIRPORTS).sort().map(code => (
+                       <SelectItem key={code} value={code} className="font-mono text-xs">
+                          {code}
+                       </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+             </div>
+          </div>
+          
+          <Button onClick={calculateFlight} className="w-full font-mono text-xs tracking-wider mb-2" size="sm">
+             <Activity className="w-3 h-3 mr-2" /> CALCULATE PROFILE
+          </Button>
+
+          {isCalculated && (
+             <div className="mt-3 pt-3 border-t border-border flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+                <div className="text-xs text-muted-foreground font-mono">EST. FLIGHT TIME</div>
+                <div className="text-lg font-bold font-mono text-primary flex items-center gap-2">
+                   <Clock className="w-4 h-4" />
+                   {flightTime}
+                </div>
+             </div>
+          )}
+       </div>
+
     <div className="relative border-l border-border ml-3 space-y-8 pl-8 py-2 animate-in fade-in slide-in-from-bottom-2">
-      {PLAN_PHASES.map((phase, index) => {
+      {activePlan.map((phase, index) => {
         const Icon = iconMap[phase.icon as keyof typeof iconMap] || Plane;
         const currentVariation = mealVariations[index] || 0;
         const variationCount = phase.foodEquivalents?.length || 1;
@@ -156,6 +336,7 @@ export default function Plan() {
           </div>
         );
       })}
+    </div>
     </div>
   );
 
