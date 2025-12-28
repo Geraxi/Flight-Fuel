@@ -3,6 +3,7 @@ import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES, SUPPLEMENT_STACK } from "@/l
 import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Droplets, Info } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
+import { Progress } from "@/components/ui/progress";
 
 export default function FlightDeck() {
   const [checklist, setChecklist] = useState(CHECKLIST_ITEMS);
@@ -69,11 +70,23 @@ export default function FlightDeck() {
       {/* Advisories */}
       {ADVISORIES.length > 0 && (
         <CockpitCard title="Advisories" status="amber">
-          <div className="space-y-3">
+          <div className="space-y-4">
             {ADVISORIES.map((adv) => (
-              <div key={adv.id} className="flex items-start gap-3">
-                {getIcon(adv.icon)}
-                <span className="font-mono text-sm text-secondary">{adv.message}</span>
+              <div key={adv.id} className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-3">
+                  {getIcon(adv.icon)}
+                  <div className="flex justify-between w-full items-center">
+                     <span className="font-mono text-sm text-secondary">{adv.message}</span>
+                     {adv.value !== undefined && (
+                        <span className="font-mono text-xs text-secondary/70">{adv.value}%</span>
+                     )}
+                  </div>
+                </div>
+                {adv.value !== undefined && (
+                   <div className="pl-7">
+                      <Progress value={(adv.value / (adv.maxValue || 100)) * 100} className="h-1.5 bg-secondary/20 [&>div]:bg-secondary" />
+                   </div>
+                )}
               </div>
             ))}
           </div>
