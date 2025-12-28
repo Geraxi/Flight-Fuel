@@ -94,3 +94,13 @@
     background-size: 100% 4px;
   }
 }
+
+@keyframes scan {
+  0%, 100% { top: 0%; }
+  50% { top: 100%; }
+}
+
+@keyframes scan-vertical {
+  0%, 100% { left: 0%; }
+  50% { left: 100%; }
+}

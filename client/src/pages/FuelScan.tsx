@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Camera, ScanLine, X, Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CockpitCard } from "@/components/ui/CockpitCard";
@@ -6,6 +6,32 @@ import { CockpitCard } from "@/components/ui/CockpitCard";
 export default function FuelScan() {
   const [scanned, setScanned] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+
+    if (!scanned) {
+      navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "environment" } 
+      })
+      .then(s => {
+        stream = s;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch(err => {
+          console.error("Error accessing camera:", err);
+      });
+    }
+
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+  }, [scanned]);
 
   const handleScan = () => {
     setScanning(true);
@@ -31,9 +57,11 @@ export default function FuelScan() {
 
         <div className="flex-1 space-y-4">
           <div className="bg-card border border-border rounded-lg p-2 h-48 relative overflow-hidden flex items-center justify-center">
-             <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-50" />
-             <ScanLine className="text-primary w-12 h-12 opacity-50" />
-             <p className="absolute bottom-2 left-2 text-xs font-mono text-muted-foreground">IMG_SOURCE: CAM_01</p>
+             <div className="absolute inset-0 bg-black">
+                <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-50" />
+             </div>
+             <ScanLine className="text-primary w-12 h-12 opacity-50 relative z-10" />
+             <p className="absolute bottom-2 left-2 text-xs font-mono text-muted-foreground z-10">IMG_SOURCE: CAM_01</p>
           </div>
 
           <CockpitCard title="Detected Items" className="border-primary/30">
@@ -85,8 +113,17 @@ export default function FuelScan() {
 
   return (
     <div className="h-full flex flex-col items-center justify-center relative -m-4 p-4 bg-black overflow-hidden">
+      {/* Camera View */}
+      <video 
+        ref={videoRef} 
+        autoPlay 
+        playsInline 
+        muted
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+
       {/* Camera UI Overlay */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-black/10">
         <div className="absolute top-10 left-10 w-8 h-8 border-t-2 border-l-2 border-primary/50" />
         <div className="absolute top-10 right-10 w-8 h-8 border-t-2 border-r-2 border-primary/50" />
         <div className="absolute bottom-24 left-10 w-8 h-8 border-b-2 border-l-2 border-primary/50" />
@@ -94,7 +131,7 @@ export default function FuelScan() {
         
         {/* Reticle */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-           <div className="w-64 h-64 border border-primary/20 rounded-lg relative">
+           <div className="w-64 h-64 border border-primary/20 rounded-lg relative overflow-hidden">
              <div className="absolute top-1/2 left-0 w-full h-px bg-primary/30" />
              <div className="absolute left-1/2 top-0 h-full w-px bg-primary/30" />
              {scanning && (
@@ -103,12 +140,13 @@ export default function FuelScan() {
            </div>
         </div>
         
+        {/* Vertical Scan Line */}
         {scanning && (
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-primary/50 shadow-[0_0_15px_#2ecc71] animate-[scan_2s_ease-in-out_infinite]" />
+            <div className="absolute left-0 top-0 h-full w-1 bg-primary/50 shadow-[0_0_15px_#2ecc71] animate-[scan-vertical_2s_ease-in-out_infinite] z-20" />
         )}
       </div>
 
-      <div className="z-10 w-full max-w-xs space-y-8 text-center">
+      <div className="z-10 w-full max-w-xs space-y-8 text-center relative">
         <div className="bg-background/80 backdrop-blur px-4 py-2 rounded-full border border-border inline-block">
           <span className="text-xs font-mono text-primary animate-pulse">
             {scanning ? "ANALYZING TARGET..." : "SYSTEM READY"}
@@ -117,14 +155,14 @@ export default function FuelScan() {
         
         <Button 
           size="lg" 
-          className="h-20 w-20 rounded-full border-4 border-primary/30 bg-primary/10 hover:bg-primary/20 hover:scale-105 transition-all p-0 flex items-center justify-center"
+          className="h-20 w-20 rounded-full border-4 border-primary/30 bg-primary/10 hover:bg-primary/20 hover:scale-105 transition-all p-0 flex items-center justify-center mx-auto"
           onClick={handleScan}
           disabled={scanning}
         >
           <Camera className="w-8 h-8 text-primary" />
         </Button>
         
-        <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest mt-12">
+        <p className="text-xs text-white/80 font-mono uppercase tracking-widest mt-12 drop-shadow-md">
           Align food in reticle
         </p>
       </div>
