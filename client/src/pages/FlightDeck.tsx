@@ -51,7 +51,7 @@ export default function FlightDeck() {
             {ADVISORIES.map((adv) => (
               <div key={adv.id} className="flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
-                <span className="font-mono text-sm text-secondary-foreground">{adv.message}</span>
+                <span className="font-mono text-sm text-secondary">{adv.message}</span>
               </div>
             ))}
           </div>
