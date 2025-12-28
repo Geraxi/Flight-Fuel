@@ -61,7 +61,7 @@ function StatusIndicator({ label, active }: { label: string, active?: boolean })
   )
 }
 
-function getAdvice(energy: number, hunger: number, mood: number) {
+function getAdvice(energy: number, hunger: number, mood: number, sleep: number) {
   const alerts = [];
   
   if (energy < 40) {
@@ -94,7 +94,21 @@ function getAdvice(energy: number, hunger: number, mood: number) {
     });
   }
 
-  if (energy >= 80 && hunger < 40 && mood >= 4) {
+  if (sleep < 6) {
+    alerts.push({
+      type: "warning",
+      title: "Sleep Debt Critical",
+      msg: "Reaction times impacted. Limit complex tasks. Prioritize recovery sleep tonight."
+    });
+  } else if (sleep > 9.5) {
+    alerts.push({
+      type: "advisory",
+      title: "Sleep Inertia Risk",
+      msg: "Extended sleep duration detected. Engage in light exercise to activate CNS."
+    });
+  }
+
+  if (energy >= 80 && hunger < 40 && mood >= 4 && sleep >= 7 && sleep <= 9) {
     return (
       <div className="bg-primary/10 border border-primary/30 p-3 rounded-sm flex items-start gap-3">
         <div className="bg-primary/20 p-1.5 rounded-full mt-0.5">
@@ -144,7 +158,8 @@ export default function Log() {
   const [dailyStats, setDailyStats] = useState({
     energy: 85,
     hunger: 50,
-    mood: 3 // 1-5 scale
+    mood: 3, // 1-5 scale
+    sleep: 7.5
   });
   
   useEffect(() => {
@@ -215,14 +230,25 @@ export default function Log() {
         </div>
         
         {/* Sleep Panel */}
-        <div className="bg-card border border-border rounded-sm relative overflow-hidden">
+        <div className="bg-card border border-border rounded-sm relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
           <div className="p-3 flex flex-col items-center">
             <div className="flex items-center justify-between w-full mb-2">
               <Moon className="w-3 h-3 text-muted-foreground" />
               <div className="text-[8px] font-mono text-muted-foreground uppercase">REST.CYC</div>
             </div>
-            <div className="text-xl font-mono font-bold">7.5</div>
+            <div className="relative w-full">
+              <Input 
+                 type="number" 
+                 className="text-xl font-mono font-bold text-center border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-foreground w-full" 
+                 value={dailyStats.sleep}
+                 onChange={(e) => setDailyStats({...dailyStats, sleep: Number(e.target.value)})}
+                 step={0.5}
+               />
+               <div className="absolute top-0 right-0 -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit2 className="w-2 h-2 text-primary" />
+               </div>
+            </div>
             <div className="text-[10px] text-muted-foreground font-mono mt-1">HRS</div>
           </div>
           <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
@@ -247,7 +273,7 @@ export default function Log() {
       
       {/* Dynamic Advice Panel */}
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        {getAdvice(dailyStats.energy, dailyStats.hunger, dailyStats.mood)}
+        {getAdvice(dailyStats.energy, dailyStats.hunger, dailyStats.mood, dailyStats.sleep)}
       </div>
 
       <CockpitCard title="Daily Status // MAN.INPUT">
