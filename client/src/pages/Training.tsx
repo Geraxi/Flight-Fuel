@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2 } from "lucide-react";
+import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, FileText, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 const MOCK_EXERCISES = {
   strength: [
@@ -50,6 +51,22 @@ type TrainingPreferences = {
   equipment: "Full Gym" | "Dumbbells Only" | "Bodyweight";
 };
 
+type ExerciseLog = {
+  name: string;
+  sets: string;
+  reps: string;
+  weight: string;
+  rest: string;
+  completed: boolean;
+};
+
+type WorkoutSession = {
+  day: number;
+  type: string;
+  exercises: ExerciseLog[];
+  completed: boolean;
+};
+
 export default function Training() {
   const [prefs, setPrefs] = useState<TrainingPreferences>({
     experience: "Intermediate",
@@ -59,12 +76,13 @@ export default function Training() {
     equipment: "Full Gym"
   });
 
-  const [generatedPlan, setGeneratedPlan] = useState<any>(null);
+  const [generatedPlan, setGeneratedPlan] = useState<WorkoutSession[] | null>(null);
   const [swappedExercises, setSwappedExercises] = useState<Record<string, string>>({});
+  const { toast } = useToast();
 
   const generatePlan = () => {
     // Mock plan generation logic
-    const plan = [];
+    const plan: WorkoutSession[] = [];
     const days = prefs.daysPerWeek;
     
     for (let i = 0; i < days; i++) {
@@ -72,22 +90,34 @@ export default function Training() {
       if (prefs.goal === "Lose Fat" && i % 2 !== 0) type = "conditioning";
       if (prefs.goal === "Maintenance" && i === days - 1) type = "mobility";
       
-      const exercises = [...MOCK_EXERCISES[type]];
+      const exercises = MOCK_EXERCISES[type].map(ex => ({
+          ...ex,
+          weight: "0",
+          completed: false
+      }));
+
       // Trim based on session length
       if (prefs.sessionLength < 45) exercises.splice(2); // Short session
-      else if (prefs.sessionLength > 60) exercises.push(...MOCK_EXERCISES.mobility.slice(0, 2)); // Add mobility to long sessions
+      else if (prefs.sessionLength > 60) {
+           MOCK_EXERCISES.mobility.slice(0, 2).forEach(ex => exercises.push({
+               ...ex,
+               weight: "0",
+               completed: false
+           }));
+      }
       
       plan.push({
         day: i + 1,
         type: type.charAt(0).toUpperCase() + type.slice(1),
-        exercises
+        exercises,
+        completed: false
       });
     }
     setGeneratedPlan(plan);
     setSwappedExercises({}); // Reset swaps
   };
 
-  const handleSwap = (originalName: string, currentName: string) => {
+  const handleSwap = (sessionIndex: number, exerciseIndex: number, originalName: string, currentName: string) => {
     const alts = ALTERNATIVES[originalName as keyof typeof ALTERNATIVES] || [];
     const currentIndex = alts.indexOf(currentName);
     
@@ -103,6 +133,33 @@ export default function Training() {
         ...prev,
         [originalName]: nextName
     }));
+
+    // Update in plan
+    if (generatedPlan) {
+        const newPlan = [...generatedPlan];
+        newPlan[sessionIndex].exercises[exerciseIndex].name = nextName;
+        setGeneratedPlan(newPlan);
+    }
+  };
+
+  const updateExercise = (sessionIndex: number, exerciseIndex: number, field: keyof ExerciseLog, value: string) => {
+      if (!generatedPlan) return;
+      const newPlan = [...generatedPlan];
+      // @ts-ignore
+      newPlan[sessionIndex].exercises[exerciseIndex][field] = value;
+      setGeneratedPlan(newPlan);
+  };
+
+  const saveSession = (sessionIndex: number) => {
+      if (!generatedPlan) return;
+      const newPlan = [...generatedPlan];
+      newPlan[sessionIndex].completed = true;
+      setGeneratedPlan(newPlan);
+
+      toast({
+          title: "Session Logged",
+          description: `Workout for Day ${newPlan[sessionIndex].day} saved successfully.`
+      });
   };
 
   return (
@@ -202,57 +259,92 @@ export default function Training() {
               <span className="text-[10px] font-mono text-muted-foreground">WK-{Math.floor(Math.random() * 52) + 1}</span>
            </div>
 
-           {generatedPlan.map((session: any, i: number) => (
-             <CockpitCard key={i} title={`Session ${session.day} // ${session.type}`} className="border-border/60">
+           {generatedPlan.map((session, i) => (
+             <CockpitCard key={i} title={`Session ${session.day} // ${session.type}`} className={`border-border/60 ${session.completed ? 'opacity-70 border-primary/30' : ''}`}>
                 <div className="space-y-3">
-                   {session.exercises.map((ex: any, j: number) => {
-                     const currentName = swappedExercises[ex.name] || ex.name;
-                     const isSwapped = currentName !== ex.name;
+                   {session.exercises.map((ex, j) => {
+                     const currentName = ex.name;
+                     const originalName = Object.keys(ALTERNATIVES).find(key => ALTERNATIVES[key as keyof typeof ALTERNATIVES].includes(currentName) || key === currentName) || currentName;
+                     const isSwapped = currentName !== originalName && ALTERNATIVES[originalName as keyof typeof ALTERNATIVES]?.includes(currentName);
                      
                      return (
                        <div key={j} className="bg-muted/5 p-3 rounded border border-border/40 relative group">
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="flex justify-between items-start mb-3">
                              <div className="flex flex-col">
                                 <span className={cn("font-bold text-sm", isSwapped && "text-primary")}>
                                    {currentName}
                                 </span>
-                                {isSwapped && <span className="text-[8px] font-mono text-muted-foreground">ALT FOR: {ex.name.toUpperCase()}</span>}
+                                {isSwapped && <span className="text-[8px] font-mono text-muted-foreground">ALT FOR: {originalName.toUpperCase()}</span>}
                              </div>
-                             <Button 
-                               variant="ghost" 
-                               size="icon" 
-                               className="h-6 w-6 opacity-50 hover:opacity-100 -mr-2 -mt-2"
-                               onClick={() => handleSwap(ex.name, currentName)}
-                             >
-                                <RefreshCw className="w-3 h-3" />
-                             </Button>
+                             {!session.completed && (
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-6 w-6 opacity-50 hover:opacity-100 -mr-2 -mt-2"
+                                    onClick={() => handleSwap(i, j, originalName, currentName)}
+                                >
+                                    <RefreshCw className="w-3 h-3" />
+                                </Button>
+                             )}
                           </div>
                           
                           <div className="grid grid-cols-3 gap-2 text-xs font-mono">
-                             <div className="bg-background/50 p-1.5 rounded text-center border border-border/30">
-                                <div className="text-[8px] text-muted-foreground uppercase mb-0.5">SETS</div>
-                                <div>{ex.sets}</div>
+                             <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
+                                <div className="text-[8px] text-muted-foreground uppercase">SETS</div>
+                                {session.completed ? (
+                                    <div className="font-bold">{ex.sets}</div>
+                                ) : (
+                                    <Input 
+                                        className="h-6 text-xs p-1 text-center font-mono" 
+                                        value={ex.sets}
+                                        onChange={(e) => updateExercise(i, j, 'sets', e.target.value)}
+                                    />
+                                )}
                              </div>
-                             <div className="bg-background/50 p-1.5 rounded text-center border border-border/30">
-                                <div className="text-[8px] text-muted-foreground uppercase mb-0.5">REPS</div>
-                                <div>{ex.reps}</div>
+                             <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
+                                <div className="text-[8px] text-muted-foreground uppercase">REPS</div>
+                                {session.completed ? (
+                                    <div className="font-bold">{ex.reps}</div>
+                                ) : (
+                                    <Input 
+                                        className="h-6 text-xs p-1 text-center font-mono" 
+                                        value={ex.reps}
+                                        onChange={(e) => updateExercise(i, j, 'reps', e.target.value)}
+                                    />
+                                )}
                              </div>
-                             <div className="bg-background/50 p-1.5 rounded text-center border border-border/30">
-                                <div className="text-[8px] text-muted-foreground uppercase mb-0.5">REST</div>
-                                <div>{ex.rest}</div>
+                             <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
+                                <div className="text-[8px] text-muted-foreground uppercase">WEIGHT (KG)</div>
+                                {session.completed ? (
+                                    <div className="font-bold">{ex.weight}</div>
+                                ) : (
+                                    <Input 
+                                        type="number"
+                                        className="h-6 text-xs p-1 text-center font-mono" 
+                                        value={ex.weight}
+                                        onChange={(e) => updateExercise(i, j, 'weight', e.target.value)}
+                                    />
+                                )}
                              </div>
                           </div>
                        </div>
                      );
                    })}
                    
-                   <div className="flex justify-between items-center pt-2 text-[10px] font-mono text-muted-foreground opacity-70">
-                      <div className="flex items-center gap-1">
-                         <Timer className="w-3 h-3" /> Est. Time: {prefs.sessionLength}m
+                   <div className="flex justify-between items-center pt-2 border-t border-border/30 mt-2">
+                      <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground opacity-70">
+                         <Timer className="w-3 h-3" /> {prefs.sessionLength}m | RPE 7-8
                       </div>
-                      <div>
-                         INTENSITY: RPE 7-8
-                      </div>
+                      
+                      {!session.completed ? (
+                          <Button size="sm" className="h-7 text-[10px] font-mono tracking-wider" onClick={() => saveSession(i)}>
+                              <Save className="w-3 h-3 mr-2" /> LOG SESSION
+                          </Button>
+                      ) : (
+                          <div className="flex items-center text-primary text-[10px] font-bold font-mono uppercase tracking-wider">
+                              <CheckCircle2 className="w-3 h-3 mr-1.5" /> Logged
+                          </div>
+                      )}
                    </div>
                 </div>
              </CockpitCard>
