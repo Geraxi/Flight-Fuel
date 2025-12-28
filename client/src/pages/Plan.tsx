@@ -296,8 +296,20 @@ export default function Plan() {
               )}
 
               <div className="relative">
+                {/* Food Image */}
+                {phase.foodEquivalents && (
+                  <div className="mb-3 rounded-lg overflow-hidden h-32 w-full relative group/img">
+                    <img 
+                      src={phase.foodEquivalents[currentVariation].image} 
+                      alt="Meal example"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  </div>
+                )}
+
                 <p className="text-sm text-foreground leading-relaxed font-medium mb-1">
-                  {phase.foodEquivalents ? phase.foodEquivalents[currentVariation] : phase.guidance}
+                  {phase.foodEquivalents ? phase.foodEquivalents[currentVariation].name : phase.guidance}
                 </p>
                 
                  {/* Swap Control */}
