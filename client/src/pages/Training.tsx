@@ -53,8 +53,10 @@ type TrainingPreferences = {
 
 type ExerciseLog = {
   name: string;
-  sets: string;
-  reps: string;
+  targetSets: string;
+  actualSets: string;
+  targetReps: string;
+  actualReps: string;
   weight: string;
   rest: string;
   completed: boolean;
@@ -91,8 +93,13 @@ export default function Training() {
       if (prefs.goal === "Maintenance" && i === days - 1) type = "mobility";
       
       const exercises = MOCK_EXERCISES[type].map(ex => ({
-          ...ex,
+          name: ex.name,
+          targetSets: ex.sets,
+          actualSets: ex.sets, // Default to target
+          targetReps: ex.reps,
+          actualReps: "", // Empty for user input
           weight: "0",
+          rest: ex.rest,
           completed: false
       }));
 
@@ -100,8 +107,13 @@ export default function Training() {
       if (prefs.sessionLength < 45) exercises.splice(2); // Short session
       else if (prefs.sessionLength > 60) {
            MOCK_EXERCISES.mobility.slice(0, 2).forEach(ex => exercises.push({
-               ...ex,
+               name: ex.name,
+               targetSets: ex.sets,
+               actualSets: ex.sets,
+               targetReps: ex.reps,
+               actualReps: "",
                weight: "0",
+               rest: ex.rest,
                completed: false
            }));
       }
@@ -291,30 +303,35 @@ export default function Training() {
                           <div className="grid grid-cols-3 gap-2 text-xs font-mono">
                              <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
                                 <div className="text-[8px] text-muted-foreground uppercase">SETS</div>
+                                <div className="text-[10px] text-muted-foreground">Target: {ex.targetSets}</div>
                                 {session.completed ? (
-                                    <div className="font-bold">{ex.sets}</div>
+                                    <div className="font-bold">{ex.actualSets}</div>
                                 ) : (
                                     <Input 
-                                        className="h-6 text-xs p-1 text-center font-mono" 
-                                        value={ex.sets}
-                                        onChange={(e) => updateExercise(i, j, 'sets', e.target.value)}
+                                        className="h-6 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/30" 
+                                        value={ex.actualSets}
+                                        placeholder={ex.targetSets}
+                                        onChange={(e) => updateExercise(i, j, 'actualSets', e.target.value)}
                                     />
                                 )}
                              </div>
                              <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
                                 <div className="text-[8px] text-muted-foreground uppercase">REPS</div>
+                                <div className="text-[10px] text-muted-foreground">Target: {ex.targetReps}</div>
                                 {session.completed ? (
-                                    <div className="font-bold">{ex.reps}</div>
+                                    <div className="font-bold">{ex.actualReps || ex.targetReps}</div>
                                 ) : (
                                     <Input 
-                                        className="h-6 text-xs p-1 text-center font-mono" 
-                                        value={ex.reps}
-                                        onChange={(e) => updateExercise(i, j, 'reps', e.target.value)}
+                                        className="h-6 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/30" 
+                                        value={ex.actualReps}
+                                        placeholder={ex.targetReps}
+                                        onChange={(e) => updateExercise(i, j, 'actualReps', e.target.value)}
                                     />
                                 )}
                              </div>
                              <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
                                 <div className="text-[8px] text-muted-foreground uppercase">WEIGHT (KG)</div>
+                                <div className="text-[10px] text-muted-foreground invisible">Target</div>
                                 {session.completed ? (
                                     <div className="font-bold">{ex.weight}</div>
                                 ) : (
