@@ -194,11 +194,18 @@ export default function Log() {
       </header>
       
       <div className="flex justify-end mb-4">
-         <Link href="/profile">
-           <Button variant="outline" size="sm" className="h-7 font-mono text-[10px] border-primary/30 text-primary hover:bg-primary/10 uppercase tracking-wider">
-             <Settings className="w-3 h-3 mr-2" /> Sys Config
-           </Button>
-        </Link>
+         <div className="flex gap-2">
+            <Link href="/progress">
+               <Button variant="outline" size="sm" className="h-7 font-mono text-[10px] border-secondary/30 text-secondary hover:bg-secondary/10 uppercase tracking-wider">
+                 <Settings className="w-3 h-3 mr-2" /> Visual Analysis
+               </Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="outline" size="sm" className="h-7 font-mono text-[10px] border-primary/30 text-primary hover:bg-primary/10 uppercase tracking-wider">
+                <Settings className="w-3 h-3 mr-2" /> Sys Config
+              </Button>
+           </Link>
+         </div>
       </div>
 
       {/* Quick Stats Grid */}

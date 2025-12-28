@@ -9,6 +9,7 @@ import FuelScan from "@/pages/FuelScan";
 import Log from "@/pages/Log";
 import Profile from "@/pages/Profile";
 import Training from "@/pages/Training";
+import Progress from "@/pages/Progress";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
             <Route path="/training" component={Training} />
             <Route path="/scan" component={FuelScan} />
             <Route path="/log" component={Log} />
+            <Route path="/progress" component={Progress} />
             <Route path="/profile" component={Profile} />
             <Route component={NotFound} />
           </Switch>
