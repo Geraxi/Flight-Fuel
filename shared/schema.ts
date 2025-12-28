@@ -30,6 +30,18 @@ export const userProfiles = pgTable("user_profiles", {
   goal: text("goal").notNull(), // Cut, Maintain, Performance
   nextMedicalDate: date("next_medical_date"),
   restingHeartRate: integer("resting_heart_rate"),
+  // Dietary preferences
+  dietType: text("diet_type"), // Omnivore, Vegetarian, Vegan, Pescatarian, Keto, Paleo
+  allergies: text("allergies").array(), // Array of allergies: gluten, dairy, nuts, shellfish, eggs, soy
+  foodRestrictions: text("food_restrictions"), // Other restrictions/notes
+  // Training preferences
+  trainingLocation: text("training_location"), // Gym, Home, Outdoors, Hotel
+  trainingStyle: text("training_style"), // Weights, Calisthenics, Cardio, Mixed
+  equipmentAccess: text("equipment_access").array(), // Array: dumbbells, barbell, bands, bodyweight
+  // Health concerns
+  healthConditions: text("health_conditions"), // Any medical conditions to consider
+  injuries: text("injuries"), // Current/past injuries
+  sleepQuality: text("sleep_quality"), // Poor, Fair, Good, Excellent
 });
 
 export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
