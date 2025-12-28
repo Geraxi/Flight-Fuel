@@ -36,6 +36,8 @@ export interface PilotProfile {
   activityLevel: "Sedentary" | "Light" | "Moderate" | "Active" | "Very Active";
   trainingFreq: number;
   goal: "Cut" | "Maintain" | "Performance";
+  nextMedicalDate?: string; // YYYY-MM-DD
+  restingHeartRate?: number;
 }
 
 export const CURRENT_DUTY: DutyStatus = {
