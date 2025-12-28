@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { DEFAULT_PROFILE, PilotProfile } from "@/lib/mockData";
-import { Save, User } from "lucide-react";
+import { Save, User, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -14,19 +14,34 @@ export default function Profile() {
     const saved = localStorage.getItem("flightfuel_profile");
     return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
   });
+  const [analysis, setAnalysis] = useState<{bmi: number, category: string} | null>(null);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  const calculateBMI = (heightCm: number, weightKg: number) => {
+    if (!heightCm || !weightKg) return null;
+    const heightM = heightCm / 100;
+    const bmi = weightKg / (heightM * heightM);
+    
+    let category = "Normal";
+    if (bmi < 18.5) category = "Underweight";
+    else if (bmi >= 25 && bmi < 30) category = "Overweight";
+    else if (bmi >= 30) category = "Obese";
+    
+    return { bmi: parseFloat(bmi.toFixed(1)), category };
+  };
+
   const handleSave = () => {
     localStorage.setItem("flightfuel_profile", JSON.stringify(profile));
+    
+    const result = calculateBMI(profile.height, profile.weight);
+    setAnalysis(result);
     
     toast({
       title: "Profile Updated",
       description: "Flight plan targets recalibrated based on new biometrics.",
     });
-    // Optional: Navigate back or stay to show success
-    // setLocation("/"); 
   };
 
   const handleInputChange = (field: keyof PilotProfile, value: string) => {
@@ -45,6 +60,31 @@ export default function Profile() {
           <p className="text-xs text-muted-foreground font-mono">CALIBRATE TARGETS</p>
         </div>
       </header>
+
+      {analysis && (
+        <CockpitCard title="Biometric Analysis" className="border-primary/50 bg-primary/5 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/20 rounded-full">
+              <Activity className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground font-mono uppercase mb-1">BMI Calculation</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold font-mono text-primary">{analysis.bmi}</span>
+                <span className={`text-sm font-medium px-2 py-0.5 rounded ${
+                  analysis.category === "Normal" 
+                    ? "bg-primary/20 text-primary" 
+                    : analysis.category === "Underweight" 
+                      ? "bg-secondary/20 text-secondary" 
+                      : "bg-destructive/20 text-destructive"
+                }`}>
+                  {analysis.category.toUpperCase()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CockpitCard>
+      )}
 
       <CockpitCard title="Biometrics">
         <div className="space-y-4">
