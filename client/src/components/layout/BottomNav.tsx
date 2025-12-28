@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Map, ScanLine, FileText } from "lucide-react";
+import { LayoutDashboard, Map, ScanLine, FileText, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function BottomNav() {
@@ -8,7 +8,8 @@ export default function BottomNav() {
   const navItems = [
     { href: "/", icon: LayoutDashboard, label: "Deck" },
     { href: "/plan", icon: Map, label: "Plan" },
-    { href: "/scan", icon: ScanLine, label: "Fuel Scan" },
+    { href: "/training", icon: Dumbbell, label: "Train" },
+    { href: "/scan", icon: ScanLine, label: "Scan" },
     { href: "/log", icon: FileText, label: "Log" },
   ];
 
@@ -21,18 +22,18 @@ export default function BottomNav() {
             <Link key={item.href} href={item.href}>
               <div
                 className={cn(
-                  "flex flex-col items-center justify-center space-y-1 w-16 cursor-pointer transition-colors duration-200",
+                  "flex flex-col items-center justify-center space-y-1 w-12 cursor-pointer transition-colors duration-200",
                   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <item.icon
-                  size={24}
+                  size={20}
                   className={cn(
                     "transition-all duration-300",
                     isActive && "drop-shadow-[0_0_8px_hsla(142,70%,45%,0.5)]"
                   )}
                 />
-                <span className="text-[10px] font-mono tracking-wider uppercase">
+                <span className="text-[9px] font-mono tracking-wider uppercase">
                   {item.label}
                 </span>
               </div>

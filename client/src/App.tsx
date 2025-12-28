@@ -8,6 +8,7 @@ import Plan from "@/pages/Plan";
 import FuelScan from "@/pages/FuelScan";
 import Log from "@/pages/Log";
 import Profile from "@/pages/Profile";
+import Training from "@/pages/Training";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
           <Switch>
             <Route path="/" component={FlightDeck} />
             <Route path="/plan" component={Plan} />
+            <Route path="/training" component={Training} />
             <Route path="/scan" component={FuelScan} />
             <Route path="/log" component={Log} />
             <Route path="/profile" component={Profile} />
