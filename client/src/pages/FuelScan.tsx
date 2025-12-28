@@ -124,7 +124,7 @@ export default function FuelScan() {
           <Camera className="w-8 h-8 text-primary" />
         </Button>
         
-        <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
+        <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest mt-12">
           Align food in reticle
         </p>
       </div>
