@@ -10,8 +10,6 @@ import { format, addDays, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterv
 import { AirportSelect } from "@/components/ui/airport-select";
 import airportsData from "@/lib/airports.json";
 
-import { BoardingPass } from "@/components/ui/boarding-pass";
-
 const iconMap = {
   Coffee,
   Plane,
@@ -249,7 +247,7 @@ export default function Plan() {
           )}
        </div>
 
-    <div className="relative border-l-2 border-dashed border-border/50 ml-3 space-y-8 pl-8 py-2 animate-in fade-in slide-in-from-bottom-2">
+    <div className="relative border-l border-border ml-3 space-y-8 pl-8 py-2 animate-in fade-in slide-in-from-bottom-2">
       {activePlan.map((phase, index) => {
         const Icon = iconMap[phase.icon as keyof typeof iconMap] || Plane;
         const currentVariation = mealVariations[index] || 0;
@@ -259,39 +257,40 @@ export default function Plan() {
           <div key={index} className="relative">
             {/* Timeline Dot */}
             <div className={cn(
-              "absolute -left-[43px] top-6 w-8 h-8 rounded-full border-2 border-background bg-muted flex items-center justify-center z-10 shadow-sm",
-              index === 1 ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"
+              "absolute -left-[41px] top-0 w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center z-10",
+              index === 1 ? "border-primary text-primary shadow-[0_0_10px_rgba(46,204,113,0.3)]" : "text-muted-foreground"
             )}>
               <Icon size={14} />
             </div>
 
-            {/* Content Card - Now using BoardingPass */}
-            <BoardingPass
-               title={phase.phase}
-               subtitle={phase.time}
-               status={index === 1 ? 'normal' : 'normal'}
-               icon={Icon}
-               headerColor={index === 1 ? "bg-primary" : "bg-muted-foreground/30"}
-               className={cn(
-                 "transition-all duration-300",
-                 index === 1 ? "ring-2 ring-primary/20 shadow-xl scale-[1.01]" : "opacity-90 hover:opacity-100 hover:scale-[1.01]"
-               )}
-            >
+            {/* Content Card */}
+            <div className={cn(
+              "cockpit-panel p-4 transition-all duration-300 group",
+              index === 1 ? "border-primary/40 ring-1 ring-primary/20" : "opacity-80 hover:opacity-100"
+            )}>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className={cn(
+                  "text-sm font-bold uppercase tracking-wider",
+                  index === 1 ? "text-primary" : "text-foreground"
+                )}>
+                  {phase.phase}
+                </h3>
+                <span className="font-mono text-xs text-muted-foreground bg-muted/20 px-1.5 py-0.5 rounded">
+                  {phase.time}
+                </span>
+              </div>
               
-              {/* Targets Grid */}
+              {/* Targets */}
               {phase.macros && (
-                 <div className="grid grid-cols-3 gap-2 mb-4 bg-muted/20 p-2 rounded-lg border border-dashed border-border/50">
-                    <div className="flex flex-col items-center">
-                      <span className="text-[9px] font-mono text-muted-foreground uppercase">PROTEIN</span>
-                      <span className="text-sm font-bold">{phase.macros.protein}g</span>
+                 <div className="flex gap-2 mb-3">
+                    <div className="bg-muted/30 px-2 py-1 rounded text-[10px] font-mono text-muted-foreground">
+                      PRO: <span className="text-foreground">{phase.macros.protein}g</span>
                     </div>
-                    <div className="flex flex-col items-center border-l border-border/30">
-                      <span className="text-[9px] font-mono text-muted-foreground uppercase">CARBS</span>
-                      <span className="text-sm font-bold">{phase.macros.carbs}g</span>
+                    <div className="bg-muted/30 px-2 py-1 rounded text-[10px] font-mono text-muted-foreground">
+                      CARB: <span className="text-foreground">{phase.macros.carbs}g</span>
                     </div>
-                    <div className="flex flex-col items-center border-l border-border/30">
-                      <span className="text-[9px] font-mono text-muted-foreground uppercase">FATS</span>
-                      <span className="text-sm font-bold">{phase.macros.fat}g</span>
+                    <div className="bg-muted/30 px-2 py-1 rounded text-[10px] font-mono text-muted-foreground">
+                      FAT: <span className="text-foreground">{phase.macros.fat}g</span>
                     </div>
                  </div>
               )}
@@ -299,46 +298,38 @@ export default function Plan() {
               <div className="relative">
                 {/* Food Image */}
                 {phase.foodEquivalents && (
-                  <div className="mb-4 rounded-xl overflow-hidden h-40 w-full relative group/img shadow-md">
+                  <div className="mb-3 rounded-lg overflow-hidden h-32 w-full relative group/img">
                     <img 
                       src={phase.foodEquivalents[currentVariation].image} 
                       alt="Meal example"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 p-3">
-                         <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold bg-primary text-primary-foreground uppercase tracking-wider mb-1">
-                            Recommendation
-                         </span>
-                         <p className="text-white font-medium leading-tight text-sm shadow-black/50 drop-shadow-md">
-                            {phase.foodEquivalents[currentVariation].name}
-                         </p>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   </div>
                 )}
-                
-                {!phase.foodEquivalents && (
-                    <div className="bg-muted/10 p-4 rounded-xl border border-border/40 mb-3">
-                        <p className="text-sm text-foreground leading-relaxed font-medium">
-                          {phase.guidance}
-                        </p>
-                    </div>
-                )}
+
+                <p className="text-sm text-foreground leading-relaxed font-medium mb-1">
+                  {phase.foodEquivalents ? phase.foodEquivalents[currentVariation].name : phase.guidance}
+                </p>
                 
                  {/* Swap Control */}
                  {variationCount > 1 && (
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm" 
                     onClick={() => toggleVariation(index, variationCount)}
-                    className="w-full h-8 text-[10px] font-mono uppercase tracking-wider border-dashed hover:border-solid hover:bg-primary/5 hover:text-primary transition-all"
+                    className="h-6 px-2 text-[10px] font-mono text-primary hover:text-primary hover:bg-primary/10 mt-2"
                   >
-                    <RefreshCw className="w-3 h-3 mr-2" />
-                    Swap Meal Option ({currentVariation + 1}/{variationCount})
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    SWAP OPTION ({currentVariation + 1}/{variationCount})
                   </Button>
                  )}
+                 
+                 <p className="text-xs text-muted-foreground mt-2 italic border-t border-border/50 pt-2">
+                   *Swap based on preference/tolerance. All amounts are estimates.
+                 </p>
               </div>
-            </BoardingPass>
+            </div>
           </div>
         );
       })}
