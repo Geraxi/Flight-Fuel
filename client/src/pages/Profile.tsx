@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,17 +10,28 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
 export default function Profile() {
-  const [profile, setProfile] = useState<PilotProfile>(DEFAULT_PROFILE);
+  const [profile, setProfile] = useState<PilotProfile>(() => {
+    const saved = localStorage.getItem("flightfuel_profile");
+    return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
+  });
+  
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
   const handleSave = () => {
-    // In a real app, this would save to backend/storage
+    localStorage.setItem("flightfuel_profile", JSON.stringify(profile));
+    
     toast({
       title: "Profile Updated",
       description: "Flight plan targets recalibrated based on new biometrics.",
     });
-    setLocation("/");
+    // Optional: Navigate back or stay to show success
+    // setLocation("/"); 
+  };
+
+  const handleInputChange = (field: keyof PilotProfile, value: string) => {
+    const numValue = value === "" ? 0 : Number(value);
+    setProfile(prev => ({ ...prev, [field]: numValue }));
   };
 
   return (
@@ -43,9 +54,9 @@ export default function Profile() {
               <Input 
                 id="height" 
                 type="number" 
-                value={profile.height} 
-                onChange={(e) => setProfile({...profile, height: Number(e.target.value)})}
-                className="font-mono bg-background/50 border-input"
+                value={profile.height || ""} 
+                onChange={(e) => handleInputChange("height", e.target.value)}
+                className="font-mono bg-background/50 border-input focus:border-primary/50 transition-colors"
               />
             </div>
             <div className="space-y-2">
@@ -53,9 +64,9 @@ export default function Profile() {
               <Input 
                 id="weight" 
                 type="number" 
-                value={profile.weight} 
-                onChange={(e) => setProfile({...profile, weight: Number(e.target.value)})}
-                className="font-mono bg-background/50 border-input"
+                value={profile.weight || ""} 
+                onChange={(e) => handleInputChange("weight", e.target.value)}
+                className="font-mono bg-background/50 border-input focus:border-primary/50 transition-colors"
               />
             </div>
           </div>
@@ -65,9 +76,9 @@ export default function Profile() {
               <Input 
                 id="age" 
                 type="number" 
-                value={profile.age} 
-                onChange={(e) => setProfile({...profile, age: Number(e.target.value)})}
-                className="font-mono bg-background/50 border-input"
+                value={profile.age || ""} 
+                onChange={(e) => handleInputChange("age", e.target.value)}
+                className="font-mono bg-background/50 border-input focus:border-primary/50 transition-colors"
               />
           </div>
         </div>
@@ -81,7 +92,7 @@ export default function Profile() {
               value={profile.activityLevel} 
               onValueChange={(val: any) => setProfile({...profile, activityLevel: val})}
             >
-              <SelectTrigger className="font-mono bg-background/50">
+              <SelectTrigger className="font-mono bg-background/50 focus:ring-primary/50">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -98,9 +109,9 @@ export default function Profile() {
             <Label className="text-xs font-mono uppercase text-muted-foreground">Training Frequency (Sessions/Wk)</Label>
              <Input 
                 type="number" 
-                value={profile.trainingFreq} 
-                onChange={(e) => setProfile({...profile, trainingFreq: Number(e.target.value)})}
-                className="font-mono bg-background/50 border-input"
+                value={profile.trainingFreq || ""} 
+                onChange={(e) => handleInputChange("trainingFreq", e.target.value)}
+                className="font-mono bg-background/50 border-input focus:border-primary/50 transition-colors"
               />
           </div>
 
@@ -110,7 +121,7 @@ export default function Profile() {
               value={profile.goal} 
               onValueChange={(val: any) => setProfile({...profile, goal: val})}
             >
-              <SelectTrigger className="font-mono bg-background/50">
+              <SelectTrigger className="font-mono bg-background/50 focus:ring-primary/50">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
