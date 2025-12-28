@@ -1,25 +1,61 @@
-import { LOG_DATA } from "@/lib/mockData";
+import { LOG_DATA, DEFAULT_PROFILE, PilotProfile } from "@/lib/mockData";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { Battery, Scale, Moon } from "lucide-react";
+import { Battery, Scale, Moon, Settings, Edit2 } from "lucide-react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 
 export default function Log() {
+  const [profile, setProfile] = useState<PilotProfile>(DEFAULT_PROFILE);
+  const [editing, setEditing] = useState(false);
+  
+  useEffect(() => {
+    const saved = localStorage.getItem("flightfuel_profile");
+    if (saved) {
+      setProfile(JSON.parse(saved));
+    }
+  }, []);
+
+  const handleUpdate = (field: keyof PilotProfile, value: number) => {
+    const newProfile = { ...profile, [field]: value };
+    setProfile(newProfile);
+    localStorage.setItem("flightfuel_profile", JSON.stringify(newProfile));
+  };
+
   return (
     <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="mb-6">
-        <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Pilot Log</h1>
-        <p className="text-xs text-muted-foreground font-mono">BIOMETRICS & STATUS MONITORING</p>
+      <header className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Pilot Log</h1>
+          <p className="text-xs text-muted-foreground font-mono">BIOMETRICS & STATUS MONITORING</p>
+        </div>
+        <Link href="/profile">
+           <Button variant="outline" size="sm" className="h-8 font-mono text-xs border-primary/30 text-primary hover:bg-primary/10">
+             <Settings className="w-3 h-3 mr-2" /> SETUP PROFILE
+           </Button>
+        </Link>
       </header>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <CockpitCard className="items-center justify-center py-4 gap-2">
+        <CockpitCard className="items-center justify-center py-4 gap-2 relative group cursor-pointer hover:border-primary/50 transition-colors">
+          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Edit2 className="w-3 h-3 text-muted-foreground" />
+          </div>
           <Scale className="w-5 h-5 text-muted-foreground" />
-          <div className="text-center">
-             <div className="text-lg font-mono font-bold">74.6</div>
+          <div className="text-center w-full">
+             <Input 
+               type="number" 
+               className="text-lg font-mono font-bold text-center border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-foreground w-full" 
+               value={profile.weight}
+               onChange={(e) => handleUpdate('weight', Number(e.target.value))}
+             />
              <div className="text-[10px] text-muted-foreground uppercase">Kg</div>
           </div>
         </CockpitCard>
+        
         <CockpitCard className="items-center justify-center py-4 gap-2">
           <Moon className="w-5 h-5 text-muted-foreground" />
           <div className="text-center">
@@ -27,6 +63,7 @@ export default function Log() {
              <div className="text-[10px] text-muted-foreground uppercase">Hrs Sleep</div>
           </div>
         </CockpitCard>
+        
         <CockpitCard className="items-center justify-center py-4 gap-2">
           <Battery className="w-5 h-5 text-primary" />
           <div className="text-center">
@@ -34,6 +71,29 @@ export default function Log() {
              <div className="text-[10px] text-muted-foreground uppercase">Energy</div>
           </div>
         </CockpitCard>
+      </div>
+
+      <div className="bg-muted/10 border border-border rounded-md p-4 flex flex-col gap-2">
+        <h3 className="font-mono text-xs text-muted-foreground uppercase">Current Profile Configuration</h3>
+        <div className="grid grid-cols-2 gap-y-2 text-sm font-medium">
+           <div className="flex justify-between">
+             <span>Goal:</span>
+             <span className="text-primary font-mono">{profile.goal}</span>
+           </div>
+           <div className="flex justify-between">
+             <span>Activity:</span>
+             <span className="text-foreground font-mono">{profile.activityLevel}</span>
+           </div>
+           <div className="flex justify-between">
+             <span>Height:</span>
+             <span className="text-foreground font-mono">{profile.height}cm</span>
+           </div>
+        </div>
+        <Link href="/profile">
+          <Button variant="ghost" className="w-full mt-2 text-xs font-mono h-8 border border-dashed border-border hover:border-primary/50">
+            UPDATE PARAMETERS
+          </Button>
+        </Link>
       </div>
 
       {/* Chart */}
