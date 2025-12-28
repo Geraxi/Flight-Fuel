@@ -3,6 +3,11 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
+// Clerk Express SDK expects CLERK_PUBLISHABLE_KEY, but Vite uses VITE_CLERK_PUBLISHABLE_KEY
+if (process.env.VITE_CLERK_PUBLISHABLE_KEY) {
+  process.env.CLERK_PUBLISHABLE_KEY = process.env.VITE_CLERK_PUBLISHABLE_KEY;
+}
+
 const app = express();
 const httpServer = createServer(app);
 

@@ -15,11 +15,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Apply Clerk middleware globally with explicit configuration
-  const publishableKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY;
-  const secretKey = process.env.CLERK_SECRET_KEY;
-  
-  app.use(clerkMiddleware({ publishableKey, secretKey }));
+  // Apply Clerk middleware globally
+  app.use(clerkMiddleware());
 
   // Helper to get user ID from Clerk auth
   const getUserId = (req: any): string | null => {
