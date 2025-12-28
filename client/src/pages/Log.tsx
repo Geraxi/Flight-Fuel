@@ -1,7 +1,7 @@
 import { LOG_DATA, DEFAULT_PROFILE, PilotProfile } from "@/lib/mockData";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { Battery, Scale, Moon, Settings, Edit2, Zap, Utensils, Activity, Radio } from "lucide-react";
+import { Battery, Scale, Moon, Settings, Edit2, Zap, Utensils, Activity, Radio, AlertTriangle } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -59,6 +59,84 @@ function StatusIndicator({ label, active }: { label: string, active?: boolean })
       <span className={`text-[8px] font-mono tracking-widest ${active ? 'text-primary' : 'text-muted-foreground/50'}`}>{label}</span>
     </div>
   )
+}
+
+function getAdvice(energy: number, hunger: number, mood: number) {
+  const alerts = [];
+  
+  if (energy < 40) {
+    alerts.push({
+      type: "warning",
+      title: "Energy Critical",
+      msg: "Caffeine + Hydration recommended immediately. Consider 20min power nap if duty permits."
+    });
+  } else if (energy < 60) {
+    alerts.push({
+      type: "advisory",
+      title: "Energy Low",
+      msg: "Prepare simple carbs + hydration. Monitor alertness."
+    });
+  }
+
+  if (hunger > 70) {
+    alerts.push({
+      type: "warning",
+      title: "Hunger High",
+      msg: "Glycogen depletion risk. Consume complex carbs + protein (e.g. Wrap/Sandwich) now."
+    });
+  }
+
+  if (mood < 3) {
+     alerts.push({
+      type: "advisory",
+      title: "Fatigue Risk",
+      msg: "Cognitive performance may be degraded. Verify checklists twice. Seek sunlight/bright light."
+    });
+  }
+
+  if (energy >= 80 && hunger < 40 && mood >= 4) {
+    return (
+      <div className="bg-primary/10 border border-primary/30 p-3 rounded-sm flex items-start gap-3">
+        <div className="bg-primary/20 p-1.5 rounded-full mt-0.5">
+           <Activity className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+           <div className="text-primary font-mono text-xs font-bold uppercase mb-1">Status Optimal</div>
+           <div className="text-xs text-muted-foreground"> physiological parameters within ideal range. Maintain current hydration and fueling strategy.</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (alerts.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      {alerts.map((alert, i) => (
+        <div key={i} className={`p-3 rounded-sm border flex items-start gap-3 ${
+          alert.type === "warning" 
+            ? "bg-destructive/10 border-destructive/30" 
+            : "bg-secondary/10 border-secondary/30"
+        }`}>
+           <div className={`p-1.5 rounded-full mt-0.5 ${
+             alert.type === "warning" ? "bg-destructive/20" : "bg-secondary/20"
+           }`}>
+              <AlertTriangle className={`w-4 h-4 ${
+                alert.type === "warning" ? "text-destructive" : "text-secondary"
+              }`} />
+           </div>
+           <div>
+              <div className={`font-mono text-xs font-bold uppercase mb-1 ${
+                alert.type === "warning" ? "text-destructive" : "text-secondary"
+              }`}>
+                {alert.title}
+              </div>
+              <div className="text-xs text-muted-foreground">{alert.msg}</div>
+           </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function Log() {
@@ -165,6 +243,11 @@ export default function Log() {
           <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
           <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border/50" />
         </div>
+      </div>
+      
+      {/* Dynamic Advice Panel */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {getAdvice(dailyStats.energy, dailyStats.hunger, dailyStats.mood)}
       </div>
 
       <CockpitCard title="Daily Status // MAN.INPUT">
