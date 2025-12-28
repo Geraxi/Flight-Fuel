@@ -2,8 +2,19 @@ import { CockpitCard } from "@/components/ui/CockpitCard";
 import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES } from "@/lib/mockData";
 import { Plane, AlertTriangle, CheckCircle2, Circle, Settings } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
 
 export default function FlightDeck() {
+  const [checklist, setChecklist] = useState(CHECKLIST_ITEMS);
+
+  const toggleChecklist = (id: string) => {
+    setChecklist(prev => prev.map(item => 
+      item.id === id 
+        ? { ...item, status: item.status === "complete" ? "pending" : "complete" }
+        : item
+    ));
+  };
+
   return (
     <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex justify-between items-center mb-6">
@@ -64,10 +75,11 @@ export default function FlightDeck() {
       {/* Checklist Grid */}
       <div className="grid grid-cols-1 gap-4">
         <h3 className="cockpit-label mt-2">PRE-FLIGHT CHECKLIST</h3>
-        {CHECKLIST_ITEMS.map((item) => (
+        {checklist.map((item) => (
           <div 
             key={item.id}
-            className="group flex items-center justify-between p-3 bg-card border border-border rounded-md hover:border-primary/50 transition-colors cursor-pointer"
+            onClick={() => toggleChecklist(item.id)}
+            className="group flex items-center justify-between p-3 bg-card border border-border rounded-md hover:border-primary/50 transition-colors cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
               {item.status === "complete" ? (
