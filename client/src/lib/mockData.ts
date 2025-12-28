@@ -51,10 +51,12 @@ export const CHECKLIST_ITEMS: ChecklistItem[] = [
 ];
 
 export const SUPPLEMENT_STACK = [
-  { id: "s1", name: "Caffeine", dose: "100mg", timing: "Pre-Duty", type: "Performance" },
-  { id: "s2", name: "Omega-3", dose: "2g", timing: "AM Meal", type: "Health" },
+  { id: "s1", name: "Caffeine", dose: "100mg", timing: "Pre-Duty (Top of Descent)", type: "Performance" },
+  { id: "s2", name: "Omega-3 (EPA/DHA)", dose: "2g", timing: "AM Meal", type: "Health" },
   { id: "s3", name: "Vitamin D3", dose: "5000 IU", timing: "AM Meal", type: "Immunity" },
-  { id: "s4", name: "Vitamin C", dose: "1g", timing: "Post-Duty", type: "Recovery" },
+  { id: "s4", name: "Creatine Monohydrate", dose: "5g", timing: "Post-Duty/Recovery", type: "Cognitive/Power" },
+  { id: "s5", name: "Whey Protein Isolate", dose: "25g", timing: "Post-Workout/Snack", type: "Recovery" },
+  { id: "s6", name: "Magnesium Bisglycinate", dose: "400mg", timing: "Pre-Sleep", type: "Sleep Support" },
 ];
 
 export const ADVISORIES: Advisory[] = [
