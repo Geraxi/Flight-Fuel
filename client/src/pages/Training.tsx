@@ -4,44 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, FileText, Edit2 } from "lucide-react";
+import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, FileText, Edit2, Play, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-
-const MOCK_EXERCISES = {
-  strength: [
-    { name: "Barbell Squat", sets: "3-4", reps: "6-8", rest: "3m" },
-    { name: "Romanian Deadlift", sets: "3", reps: "8-10", rest: "2m" },
-    { name: "Overhead Press", sets: "3", reps: "8-10", rest: "2m" },
-    { name: "Pull-ups (Weighted)", sets: "3", reps: "AMRAP", rest: "2m" },
-  ],
-  conditioning: [
-    { name: "Row Erg Intervals", sets: "10", reps: "500m", rest: "1:1" },
-    { name: "Kettlebell Swings", sets: "5", reps: "20", rest: "1m" },
-    { name: "Box Jumps", sets: "4", reps: "12", rest: "90s" },
-    { name: "Burpees", sets: "3", reps: "15", rest: "60s" },
-  ],
-  mobility: [
-    { name: "Thoracic Rotation", sets: "2", reps: "10/side", rest: "-" },
-    { name: "Hip 90/90", sets: "2", reps: "60s/side", rest: "-" },
-    { name: "Ankle Dorsiflexion", sets: "2", reps: "15/side", rest: "-" },
-  ]
-};
-
-const ALTERNATIVES = {
-  "Barbell Squat": ["Goblet Squat", "Leg Press", "Bulgarian Split Squat"],
-  "Romanian Deadlift": ["Hamstring Curl", "Kettlebell Swing", "Good Morning"],
-  "Overhead Press": ["Dumbbell Press", "Landmine Press", "Push-ups"],
-  "Pull-ups (Weighted)": ["Lat Pulldown", "Inverted Row", "Dumbbell Row"],
-  "Row Erg Intervals": ["Air Bike", "Treadmill Sprints", "Jump Rope"],
-  "Kettlebell Swings": ["Broad Jumps", "Clean & Press", "Medicine Ball Slams"],
-  "Box Jumps": ["Step-ups", "Jump Squats", "Tuck Jumps"],
-  "Burpees": ["Mountain Climbers", "Thrusters", "Bear Crawls"],
-  "Thoracic Rotation": ["Cat-Cow", "Open Book", "Thread the Needle"],
-  "Hip 90/90": ["Pigeon Pose", "Frog Stretch", "Couch Stretch"],
-  "Ankle Dorsiflexion": ["Calf Stretch", "Down Dog", "Tibialis Raise"]
-};
+import { MOCK_EXERCISES, ALTERNATIVES, type ExerciseDef } from "@/lib/exercises";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type TrainingPreferences = {
   experience: "Beginner" | "Intermediate" | "Advanced";
@@ -64,6 +39,8 @@ type ExerciseLog = {
   sets: SetLog[];
   rest: string;
   completed: boolean;
+  // Add reference to original def for media
+  originalDef?: ExerciseDef;
 };
 
 type WorkoutSession = {
@@ -110,7 +87,8 @@ export default function Training() {
               targetReps: ex.reps,
               sets,
               rest: ex.rest,
-              completed: false
+              completed: false,
+              originalDef: ex
           };
       });
 
@@ -131,7 +109,8 @@ export default function Training() {
                    targetReps: ex.reps,
                    sets,
                    rest: ex.rest,
-                   completed: false
+                   completed: false,
+                   originalDef: ex
                });
            });
       }
@@ -148,7 +127,7 @@ export default function Training() {
   };
 
   const handleSwap = (sessionIndex: number, exerciseIndex: number, originalName: string, currentName: string) => {
-    const alts = ALTERNATIVES[originalName as keyof typeof ALTERNATIVES] || [];
+    const alts = ALTERNATIVES[originalName] || [];
     const currentIndex = alts.indexOf(currentName);
     
     let nextName;
@@ -301,9 +280,63 @@ export default function Training() {
                        <div key={j} className="bg-muted/5 p-3 rounded-xl border border-border/40 relative group">
                           <div className="flex justify-between items-start mb-3">
                              <div className="flex flex-col">
-                                <span className={cn("font-bold text-sm", isSwapped && "text-primary")}>
-                                   {currentName}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className={cn("font-bold text-sm", isSwapped && "text-primary")}>
+                                     {currentName}
+                                  </span>
+                                  {ex.originalDef && !isSwapped && (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-primary">
+                                          <Info className="w-3 h-3" />
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                          <DialogTitle className="flex items-center gap-2">
+                                            {currentName}
+                                            {ex.originalDef.video && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">Video</span>}
+                                          </DialogTitle>
+                                          <DialogDescription>
+                                            {ex.originalDef.description}
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="rounded-lg overflow-hidden mt-2 bg-black/5">
+                                          {ex.originalDef.video ? (
+                                            <video 
+                                              src={ex.originalDef.video} 
+                                              controls 
+                                              autoPlay 
+                                              loop 
+                                              muted 
+                                              className="w-full aspect-video object-cover"
+                                            />
+                                          ) : (
+                                            <img 
+                                              src={ex.originalDef.image} 
+                                              alt={currentName}
+                                              className="w-full h-64 object-cover"
+                                            />
+                                          )}
+                                        </div>
+                                        <div className="flex gap-4 text-xs font-mono text-muted-foreground border-t pt-4 mt-2">
+                                            <div className="flex flex-col">
+                                                <span className="uppercase text-[10px] opacity-70">Target Sets</span>
+                                                <span className="font-bold text-foreground">{ex.targetSets}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="uppercase text-[10px] opacity-70">Target Reps</span>
+                                                <span className="font-bold text-foreground">{ex.targetReps}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="uppercase text-[10px] opacity-70">Rest Interval</span>
+                                                <span className="font-bold text-foreground">{ex.rest}</span>
+                                            </div>
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  )}
+                                </div>
                                 <div className="flex gap-2 text-[10px] font-mono text-muted-foreground mt-0.5">
                                     <span>{ex.targetSets} SETS</span>
                                     <span>•</span>
