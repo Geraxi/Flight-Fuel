@@ -75,9 +75,9 @@ export const PLAN_PHASES = [
     icon: "Plane",
     macros: { protein: 20, carbs: 30, fat: 10 },
     foodEquivalents: [
-        "Turkey Wrap (whole wheat) + Apple",
-        "Protein Bar (low sugar) + Almonds (15 nuts)",
-        "Hard Boiled Eggs (2) + Rice Cakes (2) + Hummus"
+        "Turkey Wrap (1 whole wheat wrap + 100g turkey) + Apple (1 medium)",
+        "Protein Bar (low sugar, ~20g pro) + Almonds (15 nuts)",
+        "Hard Boiled Eggs (2 large) + Rice Cakes (2) + Hummus (2 tbsp)"
     ]
   },
   {
@@ -99,9 +99,9 @@ export const PLAN_PHASES = [
     icon: "Moon",
     macros: { protein: 20, carbs: 10, fat: 5 },
     foodEquivalents: [
-        "Casein Protein Shake",
-        "Cottage Cheese (150g)",
-        "Chamomile Tea (0 cal)"
+        "Casein Protein Shake (30g powder)",
+        "Cottage Cheese (150g) + 10 Almonds",
+        "Greek Yogurt (150g) + Chamomile Tea (0 cal)"
     ]
   },
 ];
