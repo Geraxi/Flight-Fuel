@@ -6,7 +6,35 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
+
+function SimpleSlider({ value, onValueChange, max, className, trackColor = "bg-primary" }: any) {
+  const val = value[0];
+  const percentage = Math.min(100, Math.max(0, (val / max) * 100));
+  
+  return (
+    <div className={`relative flex items-center select-none touch-none w-full h-6 ${className}`}>
+      <div className={`absolute w-full h-1.5 ${trackColor}/20 rounded-full overflow-hidden`}>
+        <div 
+          className={`h-full ${trackColor} transition-all duration-100 ease-out`} 
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      <input 
+        type="range" 
+        min={0} 
+        max={max} 
+        step={5}
+        value={val} 
+        onChange={(e) => onValueChange([Number(e.target.value)])}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+      />
+      <div 
+        className={`absolute h-4 w-4 rounded-full border border-${trackColor.replace('bg-', '')}/50 bg-background shadow pointer-events-none transition-all duration-100 ease-out z-20`}
+        style={{ left: `calc(${percentage}% - 8px)` }}
+      />
+    </div>
+  )
+}
 
 export default function Log() {
   const [profile, setProfile] = useState<PilotProfile>(DEFAULT_PROFILE);
@@ -88,12 +116,11 @@ export default function Log() {
                </div>
                <span className="font-mono text-xs text-muted-foreground">{dailyStats.energy}%</span>
              </div>
-             <Slider 
+             <SimpleSlider 
                value={[dailyStats.energy]} 
-               onValueChange={([val]) => setDailyStats({...dailyStats, energy: val})}
+               onValueChange={([val]: any) => setDailyStats({...dailyStats, energy: val})}
                max={100} 
-               step={5}
-               className="[&>.relative>.absolute]:bg-primary"
+               trackColor="bg-primary"
              />
            </div>
 
@@ -105,12 +132,11 @@ export default function Log() {
                </div>
                <span className="font-mono text-xs text-muted-foreground">{dailyStats.hunger}%</span>
              </div>
-             <Slider 
+             <SimpleSlider 
                value={[dailyStats.hunger]} 
-               onValueChange={([val]) => setDailyStats({...dailyStats, hunger: val})}
+               onValueChange={([val]: any) => setDailyStats({...dailyStats, hunger: val})}
                max={100} 
-               step={5}
-               className="[&>.relative>.absolute]:bg-secondary"
+               trackColor="bg-secondary"
              />
            </div>
            
