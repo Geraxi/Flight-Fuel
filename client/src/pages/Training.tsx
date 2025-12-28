@@ -44,7 +44,7 @@ const ALTERNATIVES = {
 
 type TrainingPreferences = {
   experience: "Beginner" | "Intermediate" | "Advanced";
-  goal: "Strength" | "Hypertrophy" | "Conditioning" | "Maintenance";
+  goal: "Build Strength" | "Build Muscle" | "Lose Fat" | "Maintenance";
   daysPerWeek: number;
   sessionLength: number;
   equipment: "Full Gym" | "Dumbbells Only" | "Bodyweight";
@@ -69,7 +69,7 @@ export default function Training() {
     
     for (let i = 0; i < days; i++) {
       let type: "strength" | "conditioning" | "mobility" = "strength";
-      if (prefs.goal === "Conditioning" && i % 2 !== 0) type = "conditioning";
+      if (prefs.goal === "Lose Fat" && i % 2 !== 0) type = "conditioning";
       if (prefs.goal === "Maintenance" && i === days - 1) type = "mobility";
       
       const exercises = [...MOCK_EXERCISES[type]];
@@ -137,9 +137,9 @@ export default function Training() {
                 <Select value={prefs.goal} onValueChange={(v: any) => setPrefs({...prefs, goal: v})}>
                     <SelectTrigger className="h-8 text-xs font-mono"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Strength">Strength Dev</SelectItem>
-                        <SelectItem value="Hypertrophy">Hypertrophy</SelectItem>
-                        <SelectItem value="Conditioning">Metabolic Cond.</SelectItem>
+                        <SelectItem value="Build Strength">Build Strength</SelectItem>
+                        <SelectItem value="Build Muscle">Build Muscle</SelectItem>
+                        <SelectItem value="Lose Fat">Lose Fat</SelectItem>
                         <SelectItem value="Maintenance">Maintenance</SelectItem>
                     </SelectContent>
                 </Select>
