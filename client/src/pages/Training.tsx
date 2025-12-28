@@ -51,13 +51,17 @@ type TrainingPreferences = {
   equipment: "Full Gym" | "Dumbbells Only" | "Bodyweight";
 };
 
+type SetLog = {
+  reps: string;
+  weight: string;
+  completed: boolean;
+};
+
 type ExerciseLog = {
   name: string;
   targetSets: string;
-  actualSets: string;
   targetReps: string;
-  actualReps: string;
-  weight: string;
+  sets: SetLog[];
   rest: string;
   completed: boolean;
 };
@@ -92,30 +96,44 @@ export default function Training() {
       if (prefs.goal === "Lose Fat" && i % 2 !== 0) type = "conditioning";
       if (prefs.goal === "Maintenance" && i === days - 1) type = "mobility";
       
-      const exercises = MOCK_EXERCISES[type].map(ex => ({
-          name: ex.name,
-          targetSets: ex.sets,
-          actualSets: ex.sets, // Default to target
-          targetReps: ex.reps,
-          actualReps: "", // Empty for user input
-          weight: "0",
-          rest: ex.rest,
-          completed: false
-      }));
+      const exercises = MOCK_EXERCISES[type].map(ex => {
+          const numSets = parseInt(ex.sets.split('-')[0]) || 3;
+          const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
+              reps: "",
+              weight: "",
+              completed: false
+          }));
+
+          return {
+              name: ex.name,
+              targetSets: ex.sets,
+              targetReps: ex.reps,
+              sets,
+              rest: ex.rest,
+              completed: false
+          };
+      });
 
       // Trim based on session length
       if (prefs.sessionLength < 45) exercises.splice(2); // Short session
       else if (prefs.sessionLength > 60) {
-           MOCK_EXERCISES.mobility.slice(0, 2).forEach(ex => exercises.push({
-               name: ex.name,
-               targetSets: ex.sets,
-               actualSets: ex.sets,
-               targetReps: ex.reps,
-               actualReps: "",
-               weight: "0",
-               rest: ex.rest,
-               completed: false
-           }));
+           MOCK_EXERCISES.mobility.slice(0, 2).forEach(ex => {
+               const numSets = parseInt(ex.sets.split('-')[0]) || 2;
+               const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
+                   reps: "",
+                   weight: "",
+                   completed: false
+               }));
+               
+               exercises.push({
+                   name: ex.name,
+                   targetSets: ex.sets,
+                   targetReps: ex.reps,
+                   sets,
+                   rest: ex.rest,
+                   completed: false
+               });
+           });
       }
       
       plan.push({
@@ -154,11 +172,11 @@ export default function Training() {
     }
   };
 
-  const updateExercise = (sessionIndex: number, exerciseIndex: number, field: keyof ExerciseLog, value: string) => {
+  const updateSet = (sessionIndex: number, exerciseIndex: number, setIndex: number, field: keyof SetLog, value: string) => {
       if (!generatedPlan) return;
       const newPlan = [...generatedPlan];
       // @ts-ignore
-      newPlan[sessionIndex].exercises[exerciseIndex][field] = value;
+      newPlan[sessionIndex].exercises[exerciseIndex].sets[setIndex][field] = value;
       setGeneratedPlan(newPlan);
   };
 
@@ -286,7 +304,12 @@ export default function Training() {
                                 <span className={cn("font-bold text-sm", isSwapped && "text-primary")}>
                                    {currentName}
                                 </span>
-                                {isSwapped && <span className="text-[8px] font-mono text-muted-foreground">ALT FOR: {originalName.toUpperCase()}</span>}
+                                <div className="flex gap-2 text-[10px] font-mono text-muted-foreground mt-0.5">
+                                    <span>{ex.targetSets} SETS</span>
+                                    <span>•</span>
+                                    <span>REST: {ex.rest}</span>
+                                    {isSwapped && <span>• ALT FOR: {originalName.toUpperCase()}</span>}
+                                </div>
                              </div>
                              {!session.completed && (
                                 <Button 
@@ -300,49 +323,42 @@ export default function Training() {
                              )}
                           </div>
                           
-                          <div className="grid grid-cols-3 gap-2 text-xs font-mono">
-                             <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
-                                <div className="text-[8px] text-muted-foreground uppercase">SETS</div>
-                                <div className="text-[10px] text-muted-foreground">Target: {ex.targetSets}</div>
-                                {session.completed ? (
-                                    <div className="font-bold">{ex.actualSets}</div>
-                                ) : (
-                                    <Input 
-                                        className="h-6 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/30" 
-                                        value={ex.actualSets}
-                                        placeholder={ex.targetSets}
-                                        onChange={(e) => updateExercise(i, j, 'actualSets', e.target.value)}
-                                    />
-                                )}
+                          <div className="space-y-1">
+                             <div className="grid grid-cols-[30px_1fr_1fr_1fr] gap-2 text-[9px] font-mono uppercase text-muted-foreground text-center px-1 mb-1">
+                                <div>#</div>
+                                <div>Target</div>
+                                <div>Reps</div>
+                                <div>Kg</div>
                              </div>
-                             <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
-                                <div className="text-[8px] text-muted-foreground uppercase">REPS</div>
-                                <div className="text-[10px] text-muted-foreground">Target: {ex.targetReps}</div>
-                                {session.completed ? (
-                                    <div className="font-bold">{ex.actualReps || ex.targetReps}</div>
-                                ) : (
-                                    <Input 
-                                        className="h-6 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/30" 
-                                        value={ex.actualReps}
-                                        placeholder={ex.targetReps}
-                                        onChange={(e) => updateExercise(i, j, 'actualReps', e.target.value)}
-                                    />
-                                )}
-                             </div>
-                             <div className="bg-background/50 p-1.5 rounded border border-border/30 flex flex-col gap-1">
-                                <div className="text-[8px] text-muted-foreground uppercase">WEIGHT (KG)</div>
-                                <div className="text-[10px] text-muted-foreground invisible">Target</div>
-                                {session.completed ? (
-                                    <div className="font-bold">{ex.weight}</div>
-                                ) : (
-                                    <Input 
-                                        type="number"
-                                        className="h-6 text-xs p-1 text-center font-mono" 
-                                        value={ex.weight}
-                                        onChange={(e) => updateExercise(i, j, 'weight', e.target.value)}
-                                    />
-                                )}
-                             </div>
+                             {ex.sets.map((set, k) => (
+                                 <div key={k} className="grid grid-cols-[30px_1fr_1fr_1fr] gap-2 items-center">
+                                    <div className="text-center text-xs font-mono text-muted-foreground/70">{k + 1}</div>
+                                    <div className="text-center text-xs font-mono text-muted-foreground/50">{ex.targetReps}</div>
+                                    
+                                    {session.completed ? (
+                                        <div className="text-center text-xs font-mono font-bold">{set.reps || '-'}</div>
+                                    ) : (
+                                        <Input 
+                                            className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                            value={set.reps}
+                                            placeholder={ex.targetReps.split('-')[0]} // First number as hint
+                                            onChange={(e) => updateSet(i, j, k, 'reps', e.target.value)}
+                                        />
+                                    )}
+
+                                    {session.completed ? (
+                                        <div className="text-center text-xs font-mono font-bold">{set.weight || '-'}</div>
+                                    ) : (
+                                        <Input 
+                                            type="number"
+                                            className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                            value={set.weight}
+                                            placeholder="0"
+                                            onChange={(e) => updateSet(i, j, k, 'weight', e.target.value)}
+                                        />
+                                    )}
+                                 </div>
+                             ))}
                           </div>
                        </div>
                      );
