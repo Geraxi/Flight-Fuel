@@ -1,5 +1,5 @@
 import { PLAN_PHASES } from "@/lib/mockData";
-import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity, MapPin, Clock, ArrowRight } from "lucide-react";
+import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity, MapPin, Clock, ArrowRight, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,16 @@ import { Label } from "@/components/ui/label";
 import { format, addDays, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addHours, addMinutes } from "date-fns";
 import { AirportSelect } from "@/components/ui/airport-select";
 import airportsData from "@/lib/airports.json";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 const iconMap = {
   Coffee,
@@ -25,6 +35,19 @@ interface Airport {
   country: string;
   lat: number;
   lon: number;
+}
+
+interface FlightSegment {
+    origin: string;
+    destination: string;
+    flightNumber: string;
+    departureTime: string; // HH:mm
+    duration: string; // HH:mm
+}
+
+interface DaySchedule {
+    status: "duty" | "rest";
+    segments: FlightSegment[];
 }
 
 const AIRPORTS_MAP = (airportsData as Airport[]).reduce((acc, airport) => {
@@ -53,7 +76,7 @@ function deg2rad(deg: number) {
 // Mock data generation
 const generateMockData = () => {
   const today = new Date();
-  const schedule: Record<string, "duty" | "rest"> = {};
+  const schedule: Record<string, DaySchedule> = {};
   const stats: Record<string, { score: number, energy: number, mood: number }> = {};
   
   // Generate data for 2 months back and forward
@@ -62,7 +85,20 @@ const generateMockData = () => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
     // Pattern: 3 days on, 2 days off
-    schedule[dateStr] = (Math.abs(i) % 5 < 3) ? "duty" : "rest";
+    const isDuty = (Math.abs(i) % 5 < 3);
+    
+    schedule[dateStr] = {
+        status: isDuty ? "duty" : "rest",
+        segments: isDuty ? [
+            {
+                origin: "LHR",
+                destination: "JFK",
+                flightNumber: "BA112",
+                departureTime: "08:30",
+                duration: "07:45"
+            }
+        ] : []
+    };
     
     // Random stats
     // Skew towards better scores generally, but some bad days
@@ -91,6 +127,11 @@ export default function Plan() {
   const [schedule, setSchedule] = useState(initialData.schedule);
   const [stats] = useState(initialData.stats);
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Dialog State
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [editingSchedule, setEditingSchedule] = useState<DaySchedule>({ status: "rest", segments: [] });
 
   // Flight Calculator State
   const [origin, setOrigin] = useState<string>("LHR");
@@ -176,18 +217,64 @@ export default function Plan() {
       [index]: ((prev[index] || 0) + 1) % max
     }));
   };
-
-  const toggleDutyStatus = (date: Date) => {
+  
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
     const dateStr = format(date, 'yyyy-MM-dd');
+    const existingSchedule = schedule[dateStr] || { status: "rest", segments: [] };
+    setEditingSchedule(JSON.parse(JSON.stringify(existingSchedule))); // Deep copy
+    setIsDialogOpen(true);
+  };
+
+  const saveSchedule = () => {
+    if (!selectedDate) return;
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
     setSchedule(prev => ({
-      ...prev,
-      [dateStr]: prev[dateStr] === "duty" ? "rest" : "duty"
+        ...prev,
+        [dateStr]: editingSchedule
     }));
+    setIsDialogOpen(false);
+  };
+  
+  const addSegment = () => {
+      setEditingSchedule(prev => ({
+          ...prev,
+          segments: [...prev.segments, {
+              origin: "LHR",
+              destination: "JFK",
+              flightNumber: "",
+              departureTime: "08:00",
+              duration: "07:00"
+          }]
+      }));
+  };
+
+  const updateSegment = (index: number, field: keyof FlightSegment, value: string) => {
+      const newSegments = [...editingSchedule.segments];
+      newSegments[index] = { ...newSegments[index], [field]: value };
+      setEditingSchedule(prev => ({
+          ...prev,
+          segments: newSegments
+      }));
+  };
+
+  const removeSegment = (index: number) => {
+      const newSegments = [...editingSchedule.segments];
+      newSegments.splice(index, 1);
+      setEditingSchedule(prev => ({
+          ...prev,
+          segments: newSegments
+      }));
   };
 
   const getStatus = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return schedule[dateStr] || "rest";
+    return schedule[dateStr]?.status || "rest";
+  };
+  
+  const getSegments = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return schedule[dateStr]?.segments || [];
   };
 
   const getDayStats = (date: Date) => {
@@ -346,6 +433,7 @@ export default function Plan() {
       ))}
       {days.map((day, i) => {
         const status = getStatus(day);
+        const segments = getSegments(day);
         const dayStats = getDayStats(day);
         const isActive = isSameDay(day, currentDate);
         const isTodayDate = isToday(day);
@@ -374,9 +462,9 @@ export default function Plan() {
         return (
           <button
             key={i}
-            onClick={() => toggleDutyStatus(day)}
+            onClick={() => handleDateClick(day)}
             className={cn(
-              "aspect-square rounded-sm border p-1 flex flex-col justify-between transition-all hover:scale-105 relative overflow-hidden",
+              "aspect-square rounded-sm border p-1 flex flex-col justify-between transition-all hover:scale-105 relative overflow-hidden group",
               colorClass,
               isActive && "ring-1 ring-primary shadow-[0_0_10px_rgba(255,255,255,0.2)]"
             )}
@@ -401,11 +489,20 @@ export default function Plan() {
             </div>
             
             <div className="flex items-end justify-between w-full z-10">
-               <div className="text-[9px] font-mono uppercase tracking-tighter opacity-80">
-                  {status === "duty" ? "FLY" : "OFF"}
+               <div className="flex flex-col items-start w-full">
+                   <div className="text-[9px] font-mono uppercase tracking-tighter opacity-80">
+                      {status === "duty" ? "FLY" : "OFF"}
+                   </div>
+                   {/* Show tiny destination code if flight */}
+                   {segments.length > 0 && (
+                       <div className="text-[8px] font-mono font-bold truncate w-full text-left mt-0.5 opacity-60">
+                         {segments[0].destination}
+                       </div>
+                   )}
                </div>
+               
                {dayStats && (
-                 <div className="text-[8px] font-mono opacity-60">
+                 <div className="text-[8px] font-mono opacity-60 absolute bottom-1 right-1">
                     {dayStats.score}%
                  </div>
                )}
@@ -449,9 +546,9 @@ export default function Plan() {
                   variant="outline" 
                   size="sm" 
                   className="h-7 text-[10px]"
-                  onClick={() => toggleDutyStatus(currentDate)}
+                  onClick={() => handleDateClick(currentDate)}
                 >
-                  CHANGE
+                  EDIT SCHEDULE
                 </Button>
              </div>
           </div>
@@ -499,6 +596,133 @@ export default function Plan() {
           </div>
         </TabsContent>
       </Tabs>
+      
+      {/* Schedule Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+             <DialogHeader>
+                 <DialogTitle>Edit Schedule</DialogTitle>
+                 <DialogDescription>
+                     {selectedDate && format(selectedDate, 'EEEE, MMMM do, yyyy')}
+                 </DialogDescription>
+             </DialogHeader>
+             
+             <div className="space-y-6 py-4">
+                 {/* Duty Status Toggle */}
+                 <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                    <div className="space-y-0.5">
+                        <Label className="text-base">Flight Duty</Label>
+                        <p className="text-xs text-muted-foreground">Is this a flying day?</p>
+                    </div>
+                    <Switch 
+                        checked={editingSchedule.status === "duty"}
+                        onCheckedChange={(checked) => {
+                            setEditingSchedule(prev => ({
+                                ...prev,
+                                status: checked ? "duty" : "rest"
+                            }));
+                        }}
+                    />
+                 </div>
+                 
+                 {/* Flight Segments */}
+                 {editingSchedule.status === "duty" && (
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <Label>Scheduled Sectors</Label>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addSegment}>
+                                <Plus className="w-3 h-3 mr-1" /> Add Sector
+                            </Button>
+                        </div>
+                        
+                        {editingSchedule.segments.length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
+                                No flights scheduled yet.
+                            </div>
+                        )}
+                        
+                        {editingSchedule.segments.map((segment, index) => (
+                            <div key={index} className="border rounded-lg p-4 relative bg-muted/10 space-y-3">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="absolute top-2 right-2 h-6 w-6 opacity-50 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                                    onClick={() => removeSegment(index)}
+                                >
+                                    <X className="w-4 h-4" />
+                                </Button>
+                                
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="space-y-1">
+                                        <Label className="text-[10px] uppercase text-muted-foreground">Flight No.</Label>
+                                        <Input 
+                                            className="h-8 text-xs font-mono" 
+                                            placeholder="BA123"
+                                            value={segment.flightNumber}
+                                            onChange={(e) => updateSegment(index, 'flightNumber', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-[10px] uppercase text-muted-foreground">Dep Time</Label>
+                                        <Input 
+                                            type="time" 
+                                            className="h-8 text-xs font-mono"
+                                            value={segment.departureTime}
+                                            onChange={(e) => updateSegment(index, 'departureTime', e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-[10px] uppercase text-muted-foreground">Duration</Label>
+                                        <Input 
+                                            type="time" 
+                                            className="h-8 text-xs font-mono"
+                                            value={segment.duration}
+                                            onChange={(e) => updateSegment(index, 'duration', e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-end">
+                                     <div className="space-y-1 w-full">
+                                        <AirportSelect 
+                                            label="Origin"
+                                            value={segment.origin}
+                                            onValueChange={(val) => updateSegment(index, 'origin', val)}
+                                        />
+                                     </div>
+                                     <div className="pb-2 text-muted-foreground">
+                                        <ArrowRight className="w-3 h-3" />
+                                     </div>
+                                     <div className="space-y-1 w-full">
+                                        <AirportSelect 
+                                            label="Dest"
+                                            value={segment.destination}
+                                            onValueChange={(val) => updateSegment(index, 'destination', val)}
+                                        />
+                                     </div>
+                                </div>
+                            </div>
+                        ))}
+                     </div>
+                 )}
+                 
+                 {editingSchedule.status === "rest" && (
+                     <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4 text-center">
+                         <Coffee className="w-8 h-8 text-secondary mx-auto mb-2 opacity-50" />
+                         <h4 className="text-sm font-bold text-secondary">Rest Period</h4>
+                         <p className="text-xs text-muted-foreground mt-1">
+                             Focus on recovery, sleep hygiene, and nutrition.
+                         </p>
+                     </div>
+                 )}
+             </div>
+             
+             <DialogFooter>
+                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                 <Button onClick={saveSchedule}>Save Changes</Button>
+             </DialogFooter>
+          </DialogContent>
+      </Dialog>
     </div>
   );
 }
