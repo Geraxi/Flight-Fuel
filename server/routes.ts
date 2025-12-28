@@ -16,6 +16,8 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -49,15 +51,24 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Session setup
+  // Session setup with PostgreSQL store
+  const PgSession = connectPgSimple(session);
+  
   app.use(
     session({
+      store: new PgSession({
+        pool,
+        tableName: "session",
+        createTableIfMissing: true,
+      }),
       secret: process.env.SESSION_SECRET || "flightfuel-secret-key-change-in-production",
       resave: false,
       saveUninitialized: false,
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
         httpOnly: true,
+        secure: false, // Set to true in production with HTTPS
+        sameSite: "lax",
       },
     })
   );
