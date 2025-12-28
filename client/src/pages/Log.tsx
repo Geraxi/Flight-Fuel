@@ -1,15 +1,20 @@
 import { LOG_DATA, DEFAULT_PROFILE, PilotProfile } from "@/lib/mockData";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { Battery, Scale, Moon, Settings, Edit2 } from "lucide-react";
+import { Battery, Scale, Moon, Settings, Edit2, Zap, Utensils } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 
 export default function Log() {
   const [profile, setProfile] = useState<PilotProfile>(DEFAULT_PROFILE);
-  const [editing, setEditing] = useState(false);
+  const [dailyStats, setDailyStats] = useState({
+    energy: 85,
+    hunger: 50,
+    mood: 3 // 1-5 scale
+  });
   
   useEffect(() => {
     const saved = localStorage.getItem("flightfuel_profile");
@@ -67,11 +72,72 @@ export default function Log() {
         <CockpitCard className="items-center justify-center py-4 gap-2">
           <Battery className="w-5 h-5 text-primary" />
           <div className="text-center">
-             <div className="text-lg font-mono font-bold text-primary">85%</div>
+             <div className="text-lg font-mono font-bold text-primary">{dailyStats.energy}%</div>
              <div className="text-[10px] text-muted-foreground uppercase">Energy</div>
           </div>
         </CockpitCard>
       </div>
+
+      <CockpitCard title="Daily Status Report">
+         <div className="space-y-6">
+           <div className="space-y-3">
+             <div className="flex justify-between items-center">
+               <div className="flex items-center gap-2">
+                 <Zap className="w-4 h-4 text-primary" />
+                 <span className="text-sm font-medium">Energy Level</span>
+               </div>
+               <span className="font-mono text-xs text-muted-foreground">{dailyStats.energy}%</span>
+             </div>
+             <Slider 
+               value={[dailyStats.energy]} 
+               onValueChange={([val]) => setDailyStats({...dailyStats, energy: val})}
+               max={100} 
+               step={5}
+               className="[&>.relative>.absolute]:bg-primary"
+             />
+           </div>
+
+           <div className="space-y-3">
+             <div className="flex justify-between items-center">
+               <div className="flex items-center gap-2">
+                 <Utensils className="w-4 h-4 text-secondary" />
+                 <span className="text-sm font-medium">Hunger Level</span>
+               </div>
+               <span className="font-mono text-xs text-muted-foreground">{dailyStats.hunger}%</span>
+             </div>
+             <Slider 
+               value={[dailyStats.hunger]} 
+               onValueChange={([val]) => setDailyStats({...dailyStats, hunger: val})}
+               max={100} 
+               step={5}
+               className="[&>.relative>.absolute]:bg-secondary"
+             />
+           </div>
+           
+           <div className="pt-2 border-t border-border/50">
+             <div className="text-xs font-mono text-muted-foreground mb-2 uppercase">Subjective Mood</div>
+             <div className="flex justify-between">
+               {[1, 2, 3, 4, 5].map((level) => (
+                 <button
+                   key={level}
+                   onClick={() => setDailyStats({...dailyStats, mood: level})}
+                   className={`w-10 h-10 rounded-md border flex items-center justify-center transition-all ${
+                     dailyStats.mood === level 
+                       ? "bg-accent border-primary text-primary shadow-[0_0_10px_rgba(46,204,113,0.2)]" 
+                       : "border-border text-muted-foreground hover:border-primary/50"
+                   }`}
+                 >
+                   {level}
+                 </button>
+               ))}
+             </div>
+             <div className="flex justify-between text-[10px] text-muted-foreground mt-1 px-1 font-mono uppercase">
+               <span>Low</span>
+               <span>High</span>
+             </div>
+           </div>
+         </div>
+      </CockpitCard>
 
       <div className="bg-muted/10 border border-border rounded-md p-4 flex flex-col gap-2">
         <h3 className="font-mono text-xs text-muted-foreground uppercase">Current Profile Configuration</h3>
