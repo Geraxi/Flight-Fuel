@@ -1,13 +1,28 @@
-// API utility functions for making authenticated requests
+// API utility functions for making authenticated requests with Clerk
+
+let getTokenFn: (() => Promise<string | null>) | null = null;
+
+export function setAuthTokenGetter(fn: () => Promise<string | null>) {
+  getTokenFn = fn;
+}
 
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string>),
+  };
+
+  if (getTokenFn) {
+    const token = await getTokenFn();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+
   const response = await fetch(url, {
     ...options,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {

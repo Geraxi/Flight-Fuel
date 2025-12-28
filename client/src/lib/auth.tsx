@@ -1,61 +1,41 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-interface User {
-  id: string;
-  username: string;
-}
+import { useUser, useAuth as useClerkAuth } from "@clerk/clerk-react";
 
 interface AuthContextType {
-  user: User | null;
+  user: { id: string; username: string } | null;
   loading: boolean;
   hasProfile: boolean;
   profileLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  signup: (username: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
   refetchProfile: () => Promise<void>;
+  getToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+  const { getToken } = useClerkAuth();
   const [hasProfile, setHasProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch("/api/auth/me", {
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-        await checkProfile();
-      } else {
-        setUser(null);
-        setHasProfile(false);
-        setProfileLoading(false);
-      }
-    } catch (error) {
-      setUser(null);
-      setHasProfile(false);
+    if (clerkLoaded && clerkUser) {
+      checkProfile();
+    } else if (clerkLoaded && !clerkUser) {
       setProfileLoading(false);
-    } finally {
-      setLoading(false);
+      setHasProfile(false);
     }
-  };
+  }, [clerkLoaded, clerkUser]);
 
   const checkProfile = async () => {
     setProfileLoading(true);
     try {
+      const token = await getToken();
       const response = await fetch("/api/profile", {
         credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (response.ok) {
         setHasProfile(true);
@@ -73,54 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await checkProfile();
   };
 
-  const login = async (username: string, password: string) => {
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Login failed");
-    }
-
-    const data = await response.json();
-    setUser(data);
-    await checkProfile();
-  };
-
-  const signup = async (username: string, password: string) => {
-    const response = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Signup failed");
-    }
-
-    const data = await response.json();
-    setUser(data);
-    setHasProfile(false);
-    setProfileLoading(false);
-  };
-
-  const logout = async () => {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    setUser(null);
-    setHasProfile(false);
-  };
+  const user = clerkUser
+    ? {
+        id: clerkUser.id,
+        username: clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress || "User",
+      }
+    : null;
 
   return (
-    <AuthContext.Provider value={{ user, loading, hasProfile, profileLoading, login, signup, logout, refetchProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading: !clerkLoaded,
+        hasProfile,
+        profileLoading,
+        refetchProfile,
+        getToken,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

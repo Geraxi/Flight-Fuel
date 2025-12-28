@@ -2,7 +2,10 @@ import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
+import { SignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { setAuthTokenGetter } from "@/lib/api";
+import { useEffect } from "react";
 import BottomNav from "@/components/layout/BottomNav";
 import FlightDeck from "@/pages/FlightDeck";
 import Plan from "@/pages/Plan";
@@ -11,23 +14,22 @@ import Log from "@/pages/Log";
 import Profile from "@/pages/Profile";
 import Training from "@/pages/Training";
 import Progress from "@/pages/Progress";
-import AuthPage from "@/pages/AuthPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import NotFound from "@/pages/not-found";
 
-function Router() {
-  const { user, loading, hasProfile, profileLoading, refetchProfile } = useAuth();
+function AuthenticatedApp() {
+  const { hasProfile, profileLoading, refetchProfile, getToken } = useAuth();
 
-  if (loading || profileLoading) {
+  useEffect(() => {
+    setAuthTokenGetter(getToken);
+  }, [getToken]);
+
+  if (profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] via-[#1a1f35] to-[#0f1419] flex items-center justify-center">
-        <div className="text-cyan-400">Loading...</div>
+        <div className="text-cyan-400">Loading profile...</div>
       </div>
     );
-  }
-
-  if (!user) {
-    return <AuthPage />;
   }
 
   if (!hasProfile) {
@@ -57,13 +59,41 @@ function Router() {
   );
 }
 
+function Router() {
+  return (
+    <>
+      <SignedOut>
+        <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] via-[#1a1f35] to-[#0f1419] flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-white mb-2">FlightFuel</h1>
+              <p className="text-cyan-400/80 text-sm">Pilot Performance Platform</p>
+            </div>
+            <SignIn 
+              appearance={{
+                elements: {
+                  rootBox: "mx-auto",
+                  card: "bg-[#1a1f35]/90 border border-cyan-500/20",
+                }
+              }}
+            />
+          </div>
+        </div>
+      </SignedOut>
+      <SignedIn>
+        <AuthProvider>
+          <AuthenticatedApp />
+        </AuthProvider>
+      </SignedIn>
+    </>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Toaster />
-        <Router />
-      </AuthProvider>
+      <Toaster />
+      <Router />
     </QueryClientProvider>
   );
 }

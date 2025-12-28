@@ -11,6 +11,7 @@ import { useLocation } from "wouter";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { useAuth } from "@/lib/auth";
 import { profileApi } from "@/lib/api";
+import { SignOutButton, UserButton } from "@clerk/clerk-react";
 
 export default function Profile() {
   const [profile, setProfile] = useState<PilotProfile>(() => {
@@ -22,7 +23,7 @@ export default function Profile() {
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
      // Initial calculation on load if data exists
@@ -350,6 +351,29 @@ export default function Profile() {
       <Button onClick={handleSave} className="w-full font-mono tracking-wider" size="lg">
         <Save className="w-4 h-4 mr-2" /> SAVE PROFILE
       </Button>
+
+      <CockpitCard title="Account" className="mt-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <UserButton 
+              appearance={{
+                elements: {
+                  avatarBox: "w-10 h-10"
+                }
+              }}
+            />
+            <div>
+              <div className="font-mono text-sm">{user?.username}</div>
+              <div className="text-xs text-muted-foreground">Pilot Account</div>
+            </div>
+          </div>
+          <SignOutButton>
+            <Button variant="outline" size="sm" className="font-mono">
+              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+            </Button>
+          </SignOutButton>
+        </div>
+      </CockpitCard>
     </div>
   );
 }
