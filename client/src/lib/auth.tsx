@@ -8,9 +8,12 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  hasProfile: boolean;
+  profileLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   signup: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refetchProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,6 +21,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasProfile, setHasProfile] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
     checkAuth();
@@ -31,14 +36,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         setUser(data);
+        await checkProfile();
       } else {
         setUser(null);
+        setHasProfile(false);
+        setProfileLoading(false);
       }
     } catch (error) {
       setUser(null);
+      setHasProfile(false);
+      setProfileLoading(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  const checkProfile = async () => {
+    setProfileLoading(true);
+    try {
+      const response = await fetch("/api/profile", {
+        credentials: "include",
+      });
+      if (response.ok) {
+        setHasProfile(true);
+      } else {
+        setHasProfile(false);
+      }
+    } catch (error) {
+      setHasProfile(false);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const refetchProfile = async () => {
+    await checkProfile();
   };
 
   const login = async (username: string, password: string) => {
@@ -56,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json();
     setUser(data);
+    await checkProfile();
   };
 
   const signup = async (username: string, password: string) => {
@@ -73,6 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json();
     setUser(data);
+    setHasProfile(false);
+    setProfileLoading(false);
   };
 
   const logout = async () => {
@@ -81,10 +116,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       credentials: "include",
     });
     setUser(null);
+    setHasProfile(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, hasProfile, profileLoading, login, signup, logout, refetchProfile }}>
       {children}
     </AuthContext.Provider>
   );

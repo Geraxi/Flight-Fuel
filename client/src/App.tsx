@@ -12,12 +12,13 @@ import Profile from "@/pages/Profile";
 import Training from "@/pages/Training";
 import Progress from "@/pages/Progress";
 import AuthPage from "@/pages/AuthPage";
+import OnboardingPage from "@/pages/OnboardingPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { user, loading } = useAuth();
+  const { user, loading, hasProfile, profileLoading, refetchProfile } = useAuth();
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] via-[#1a1f35] to-[#0f1419] flex items-center justify-center">
         <div className="text-cyan-400">Loading...</div>
@@ -27,6 +28,10 @@ function Router() {
 
   if (!user) {
     return <AuthPage />;
+  }
+
+  if (!hasProfile) {
+    return <OnboardingPage onComplete={refetchProfile} />;
   }
 
   return (
