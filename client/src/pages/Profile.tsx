@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { DEFAULT_PROFILE, PilotProfile, LOG_DATA } from "@/lib/mockData";
-import { Save, User, Activity, CalendarDays, HeartPulse, Stethoscope, AlertTriangle } from "lucide-react";
+import { Save, User, Activity, CalendarDays, HeartPulse, Stethoscope, AlertTriangle, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { differenceInDays, parseISO, format } from "date-fns";
+import { useAuth } from "@/lib/auth";
+import { profileApi } from "@/lib/api";
 
 export default function Profile() {
   const [profile, setProfile] = useState<PilotProfile>(() => {
@@ -20,6 +22,7 @@ export default function Profile() {
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { logout, user } = useAuth();
 
   useEffect(() => {
      // Initial calculation on load if data exists
@@ -117,16 +120,43 @@ export default function Profile() {
 
   const daysUntilMedical = getDaysUntilMedical();
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged Out",
+        description: "Session terminated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Logout Failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="mb-6 flex items-center gap-3">
-         <div className="h-10 w-10 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10">
-          <User className="text-primary w-5 h-5" />
+      <header className="mb-6 flex items-center gap-3 justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10">
+            <User className="text-primary w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Pilot Profile</h1>
+            <p className="text-xs text-muted-foreground font-mono">{user?.username}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Pilot Profile</h1>
-          <p className="text-xs text-muted-foreground font-mono">CALIBRATE TARGETS</p>
-        </div>
+        <Button
+          data-testid="button-logout"
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="w-4 h-4" />
+        </Button>
       </header>
 
       {/* Medical Readiness Section */}

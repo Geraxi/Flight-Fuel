@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { format, addDays, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addHours, addMinutes } from "date-fns";
 import { AirportSelect } from "@/components/ui/airport-select";
 import airportsData from "@/lib/airports.json";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { flightsApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -127,6 +130,88 @@ export default function Plan() {
   const [schedule, setSchedule] = useState(initialData.schedule);
   const [stats] = useState(initialData.stats);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Load flights from API
+  const { data: apiFlights, isLoading } = useQuery({
+    queryKey: ["flights"],
+    queryFn: flightsApi.getAll,
+  });
+
+  // Update local schedule when API data changes
+  useEffect(() => {
+    if (apiFlights) {
+      const newSchedule: Record<string, DaySchedule> = { ...initialData.schedule };
+      
+      // Group flights by date
+      const flightsByDate: Record<string, any[]> = {};
+      apiFlights.forEach((flight: any) => {
+        if (!flightsByDate[flight.date]) {
+          flightsByDate[flight.date] = [];
+        }
+        flightsByDate[flight.date].push(flight);
+      });
+      
+      // Convert API flights to schedule format
+      Object.keys(flightsByDate).forEach(dateStr => {
+        const flights = flightsByDate[dateStr];
+        const hasDutyFlights = flights.some((f: any) => f.isDuty);
+        
+        newSchedule[dateStr] = {
+          status: hasDutyFlights ? "duty" : "rest",
+          segments: flights.map((f: any) => ({
+            origin: f.origin,
+            destination: f.destination,
+            flightNumber: f.flightNumber || "",
+            departureTime: f.departureTime,
+            duration: `${String(Math.floor(f.duration / 60)).padStart(2, '0')}:${String(f.duration % 60).padStart(2, '0')}`
+          }))
+        };
+      });
+      
+      setSchedule(newSchedule);
+    }
+  }, [apiFlights]);
+
+  // Mutation to save flights
+  const saveMutation = useMutation({
+    mutationFn: async ({ date, schedule: daySchedule }: { date: string, schedule: DaySchedule }) => {
+      // Delete existing flights for this date
+      await flightsApi.deleteByDate(date);
+      
+      // Create new flights
+      if (daySchedule.segments.length > 0) {
+        const promises = daySchedule.segments.map(segment => {
+          const [hours, minutes] = segment.duration.split(':').map(Number);
+          return flightsApi.create({
+            date,
+            origin: segment.origin,
+            destination: segment.destination,
+            flightNumber: segment.flightNumber,
+            departureTime: segment.departureTime,
+            duration: hours * 60 + minutes,
+            isDuty: daySchedule.status === "duty",
+          });
+        });
+        await Promise.all(promises);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["flights"] });
+      toast({
+        title: "Schedule Updated",
+        description: "Flight schedule saved successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save schedule.",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -226,13 +311,18 @@ export default function Plan() {
     setIsDialogOpen(true);
   };
 
-  const saveSchedule = () => {
+  const saveSchedule = async () => {
     if (!selectedDate) return;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    // Update local state optimistically
     setSchedule(prev => ({
         ...prev,
         [dateStr]: editingSchedule
     }));
+    
+    // Save to API
+    await saveMutation.mutateAsync({ date: dateStr, schedule: editingSchedule });
     setIsDialogOpen(false);
   };
   
