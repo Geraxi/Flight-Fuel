@@ -1,0 +1,57 @@
+Design a mobile iOS app called FlightFuel with a professional aviation-themed UI, inspired by electronic flight bags (EFB) and glass cockpits.
+The app is a nutrition, hydration, and supplement decision-support tool for pilots, using pilot language and checklist-style layouts.
+Visual style:
+Dark cockpit-style background (charcoal/graphite)
+Subtle panel borders like avionics modules
+Primary accent: avionics green (OK / normal status)
+Secondary accent: amber (advisories)
+Clean, minimal, premium — not gamified
+Typography similar to modern aviation systems; use monospaced fonts for data blocks
+Tone & language:
+Professional, procedural, aviation-specific
+Use terms like: Flight Deck, Flight Plan, Fuel Strategy, Fluid Load, Advisories, Duty, Recovery
+Avoid medical or prescriptive language
+Bottom navigation (4 tabs):
+Flight Deck
+Plan
+Fuel Scan
+Log
+Flight Deck (Home Screen):
+Header titled “FLIGHT DECK”
+Main status card labeled “TODAY’S FLIGHT PLAN” showing:
+Duty Start (LT)
+Duty Type
+Conditions
+Operating Mode (Performance / Maintain / Cut)
+Checklist-style cards:
+Fuel Strategy
+Fluid Load
+Optional Performance Aids (Educational)
+An amber “ADVISORIES” panel with short, calm notices
+Plan Screen:
+Vertical duty timeline (Pre-duty, During Duty, Post-duty, Recovery)
+Each phase shows guidance using categories (not specific foods or dosages)
+Fuel Scan Screen (Camera Feature):
+Dark cockpit-style camera UI
+Central reticle overlay
+Button labeled “FUEL SCAN”
+After scanning, show a results screen with:
+Detected food items (editable)
+Confidence indicator (Low / Medium / High)
+Portion selector (Small / Medium / Large)
+“Estimated” calories and macros clearly labeled as estimates
+Button: “ADD TO FLIGHT PLAN”
+Include text noting estimates are educational and not medical advice
+Log Screen:
+Minimal status monitoring:
+Weight trend
+Sleep hours
+Energy level (1–5)
+Clean, cockpit-style charts
+General requirements:
+No medical claims
+No supplement dosages
+Use educational, non-prescriptive wording everywhere
+UI should feel like a cockpit tool, not a fitness app
+Optimized for iOS look and feel
+Create clean, production-ready UI screens following this system.
