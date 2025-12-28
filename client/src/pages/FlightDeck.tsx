@@ -100,7 +100,7 @@ export default function FlightDeck() {
           <div 
             key={item.id}
             onClick={() => toggleChecklist(item.id)}
-            className="group flex items-center justify-between p-3 bg-card border border-border rounded-md hover:border-primary/50 transition-colors cursor-pointer select-none"
+            className="group flex items-center justify-between p-3 bg-card border border-border rounded-xl hover:border-primary/50 transition-colors cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
               {item.status === "complete" ? (

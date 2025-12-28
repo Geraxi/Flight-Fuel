@@ -110,7 +110,7 @@ function getAdvice(energy: number, hunger: number, mood: number, sleep: number) 
 
   if (energy >= 80 && hunger < 40 && mood >= 4 && sleep >= 7 && sleep <= 9) {
     return (
-      <div className="bg-primary/10 border border-primary/30 p-3 rounded-sm flex items-start gap-3">
+      <div className="bg-primary/10 border border-primary/30 p-3 rounded-2xl flex items-start gap-3">
         <div className="bg-primary/20 p-1.5 rounded-full mt-0.5">
            <Activity className="w-4 h-4 text-primary" />
         </div>
@@ -127,7 +127,7 @@ function getAdvice(energy: number, hunger: number, mood: number, sleep: number) 
   return (
     <div className="space-y-2">
       {alerts.map((alert, i) => (
-        <div key={i} className={`p-3 rounded-sm border flex items-start gap-3 ${
+        <div key={i} className={`p-3 rounded-2xl border flex items-start gap-3 ${
           alert.type === "warning" 
             ? "bg-destructive/10 border-destructive/30" 
             : "bg-secondary/10 border-secondary/30"
@@ -204,7 +204,7 @@ export default function Log() {
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-3 gap-3">
         {/* Weight Panel */}
-        <div className="bg-card border border-border rounded-sm relative group overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl relative group overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
           <div className="p-3 flex flex-col items-center">
             <div className="flex items-center justify-between w-full mb-2">
@@ -224,13 +224,10 @@ export default function Log() {
             </div>
             <div className="text-[10px] text-muted-foreground font-mono mt-1">KG</div>
           </div>
-          {/* Corner Decals */}
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border/50" />
         </div>
         
         {/* Sleep Panel */}
-        <div className="bg-card border border-border rounded-sm relative overflow-hidden group">
+        <div className="bg-card border border-border rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
           <div className="p-3 flex flex-col items-center">
             <div className="flex items-center justify-between w-full mb-2">
@@ -251,12 +248,10 @@ export default function Log() {
             </div>
             <div className="text-[10px] text-muted-foreground font-mono mt-1">HRS</div>
           </div>
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
-           <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border/50" />
         </div>
         
         {/* Energy Panel */}
-        <div className="bg-card border border-border rounded-sm relative overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
           <div className="p-3 flex flex-col items-center">
              <div className="flex items-center justify-between w-full mb-2">
@@ -266,8 +261,6 @@ export default function Log() {
              <div className="text-xl font-mono font-bold text-primary text-shadow-glow">{dailyStats.energy}%</div>
              <div className="text-[10px] text-muted-foreground font-mono mt-1">CAPACITY</div>
           </div>
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border/50" />
         </div>
       </div>
       
@@ -349,7 +342,7 @@ export default function Log() {
          </div>
       </CockpitCard>
 
-      <div className="bg-card border border-border rounded-sm p-4 relative overflow-hidden">
+      <div className="bg-card border border-border rounded-2xl p-4 relative overflow-hidden">
         {/* Decorative background grid */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:10px_10px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
         

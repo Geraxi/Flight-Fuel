@@ -36,10 +36,6 @@ export function CockpitCard({ title, status = "normal", className, children, ...
       <div className="p-4 flex-1">
         {children}
       </div>
-      
-      {/* Corner accents for tech feel */}
-      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border opacity-50" />
-      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border opacity-50" />
     </div>
   );
 }

@@ -298,7 +298,7 @@ export default function Training() {
                      const isSwapped = currentName !== originalName && ALTERNATIVES[originalName as keyof typeof ALTERNATIVES]?.includes(currentName);
                      
                      return (
-                       <div key={j} className="bg-muted/5 p-3 rounded border border-border/40 relative group">
+                       <div key={j} className="bg-muted/5 p-3 rounded-xl border border-border/40 relative group">
                           <div className="flex justify-between items-start mb-3">
                              <div className="flex flex-col">
                                 <span className={cn("font-bold text-sm", isSwapped && "text-primary")}>
