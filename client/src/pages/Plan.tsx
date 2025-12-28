@@ -68,7 +68,7 @@ export default function Plan() {
                         PRO: <span className="text-foreground">{phase.macros.protein}g</span>
                       </div>
                       <div className="bg-muted/30 px-2 py-1 rounded text-[10px] font-mono text-muted-foreground">
-                        CHO: <span className="text-foreground">{phase.macros.carbs}g</span>
+                        CARB: <span className="text-foreground">{phase.macros.carbs}g</span>
                       </div>
                       <div className="bg-muted/30 px-2 py-1 rounded text-[10px] font-mono text-muted-foreground">
                         FAT: <span className="text-foreground">{phase.macros.fat}g</span>
