@@ -7,6 +7,7 @@ import FlightDeck from "@/pages/FlightDeck";
 import Plan from "@/pages/Plan";
 import FuelScan from "@/pages/FuelScan";
 import Log from "@/pages/Log";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
             <Route path="/plan" component={Plan} />
             <Route path="/scan" component={FuelScan} />
             <Route path="/log" component={Log} />
+            <Route path="/profile" component={Profile} />
             <Route component={NotFound} />
           </Switch>
         </div>

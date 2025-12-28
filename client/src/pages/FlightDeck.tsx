@@ -1,6 +1,7 @@
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES } from "@/lib/mockData";
-import { Plane, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
+import { Plane, AlertTriangle, CheckCircle2, Circle, Settings } from "lucide-react";
+import { Link } from "wouter";
 
 export default function FlightDeck() {
   return (
@@ -10,9 +11,11 @@ export default function FlightDeck() {
           <h1 className="text-xl font-bold tracking-widest text-foreground">FLIGHT DECK</h1>
           <p className="text-xs text-muted-foreground font-mono">SYS.READY // {new Date().toLocaleDateString()}</p>
         </div>
-        <div className="h-8 w-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10">
-          <Plane className="text-primary w-4 h-4" />
-        </div>
+        <Link href="/profile">
+          <div className="h-8 w-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10 hover:bg-primary/20 cursor-pointer transition-colors">
+            <Settings className="text-primary w-4 h-4" />
+          </div>
+        </Link>
       </header>
 
       {/* Main Status Card */}
