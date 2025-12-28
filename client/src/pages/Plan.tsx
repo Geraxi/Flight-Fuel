@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { format, addDays, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addHours, addMinutes } from "date-fns";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AirportSelect } from "@/components/ui/airport-select";
+import airportsData from "@/lib/airports.json";
 
 const iconMap = {
   Coffee,
@@ -16,20 +17,20 @@ const iconMap = {
   Moon
 };
 
-const AIRPORTS: Record<string, { lat: number, lon: number, name: string }> = {
-  "LHR": { lat: 51.4700, lon: -0.4543, name: "London Heathrow" },
-  "JFK": { lat: 40.6413, lon: -73.7781, name: "New York JFK" },
-  "DXB": { lat: 25.2532, lon: 55.3657, name: "Dubai Int" },
-  "SIN": { lat: 1.3644, lon: 103.9915, name: "Singapore Changi" },
-  "LAX": { lat: 33.9416, lon: -118.4085, name: "Los Angeles Int" },
-  "HND": { lat: 35.5494, lon: 139.7798, name: "Tokyo Haneda" },
-  "SYD": { lat: -33.9399, lon: 151.1753, name: "Sydney Kingsford Smith" },
-  "FRA": { lat: 50.0379, lon: 8.5622, name: "Frankfurt" },
-  "CDG": { lat: 49.0097, lon: 2.5479, name: "Paris Charles de Gaulle" },
-  "AMS": { lat: 52.3105, lon: 4.7683, name: "Amsterdam Schiphol" },
-  "MIA": { lat: 25.7959, lon: -80.2870, name: "Miami Int" },
-  "SFO": { lat: 37.6213, lon: -122.3790, name: "San Francisco Int" }
-};
+// Type definition for airport data
+interface Airport {
+  code: string;
+  name: string;
+  city: string;
+  country: string;
+  lat: number;
+  lon: number;
+}
+
+const AIRPORTS_MAP = (airportsData as Airport[]).reduce((acc, airport) => {
+  acc[airport.code] = airport;
+  return acc;
+}, {} as Record<string, Airport>);
 
 // Haversine formula to calculate distance in km
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -99,10 +100,10 @@ export default function Plan() {
   const [isCalculated, setIsCalculated] = useState(false);
 
   const calculateFlight = () => {
-    if (!AIRPORTS[origin] || !AIRPORTS[destination]) return;
+    if (!AIRPORTS_MAP[origin] || !AIRPORTS_MAP[destination]) return;
 
-    const start = AIRPORTS[origin];
-    const end = AIRPORTS[destination];
+    const start = AIRPORTS_MAP[origin];
+    const end = AIRPORTS_MAP[destination];
     
     const distance = calculateDistance(start.lat, start.lon, end.lat, end.lon);
     const speed = 850; // km/h avg cruise speed
@@ -210,40 +211,24 @@ export default function Plan() {
           </div>
           
           <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-end mb-4">
-             <div className="space-y-1.5">
-                <Label className="text-[10px] font-mono text-muted-foreground uppercase">Origin</Label>
-                <Select value={origin} onValueChange={setOrigin}>
-                  <SelectTrigger className="h-9 font-mono text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(AIRPORTS).sort().map(code => (
-                       <SelectItem key={code} value={code} className="font-mono text-xs">
-                          {code}
-                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+             <div className="space-y-1.5 w-full">
+                <AirportSelect 
+                  label="Origin" 
+                  value={origin} 
+                  onValueChange={setOrigin} 
+                />
              </div>
              
              <div className="pb-2 text-muted-foreground">
                 <ArrowRight className="w-4 h-4" />
              </div>
              
-             <div className="space-y-1.5">
-                <Label className="text-[10px] font-mono text-muted-foreground uppercase">Dest</Label>
-                <Select value={destination} onValueChange={setDestination}>
-                  <SelectTrigger className="h-9 font-mono text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(AIRPORTS).sort().map(code => (
-                       <SelectItem key={code} value={code} className="font-mono text-xs">
-                          {code}
-                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+             <div className="space-y-1.5 w-full">
+                <AirportSelect 
+                  label="Dest" 
+                  value={destination} 
+                  onValueChange={setDestination} 
+                />
              </div>
           </div>
           
