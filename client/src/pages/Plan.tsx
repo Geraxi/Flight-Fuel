@@ -1,7 +1,7 @@
 import { PLAN_PHASES } from "@/lib/mockData";
-import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, addDays, startOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
@@ -13,23 +13,46 @@ const iconMap = {
   Moon
 };
 
-// Mock schedule data generator
-const generateMockSchedule = () => {
+// Mock data generation
+const generateMockData = () => {
   const today = new Date();
   const schedule: Record<string, "duty" | "rest"> = {};
-  // Set some random days as duty
-  for (let i = -5; i < 35; i++) {
+  const stats: Record<string, { score: number, energy: number, mood: number }> = {};
+  
+  // Generate data for 2 months back and forward
+  for (let i = -60; i < 60; i++) {
     const date = addDays(today, i);
     const dateStr = format(date, 'yyyy-MM-dd');
-    // Random pattern: 3 days on, 2 days off
-    schedule[dateStr] = (i % 5 < 3) ? "duty" : "rest";
+    
+    // Pattern: 3 days on, 2 days off
+    schedule[dateStr] = (Math.abs(i) % 5 < 3) ? "duty" : "rest";
+    
+    // Random stats
+    // Skew towards better scores generally, but some bad days
+    const baseScore = 70 + Math.random() * 30; // 70-100 base
+    const fatiguePenalty = (i % 5 === 2) ? Math.random() * 20 : 0; // Last day of block is tiring
+    const score = Math.max(0, Math.min(100, Math.round(baseScore - fatiguePenalty)));
+    
+    stats[dateStr] = {
+      score,
+      energy: Math.round(score * 0.9), // Correlated
+      mood: Math.round(score / 20) // 1-5
+    };
   }
-  return schedule;
+  return { schedule, stats };
+};
+
+const getPerformanceColor = (score: number) => {
+  if (score >= 80) return "bg-emerald-500/20 text-emerald-500 border-emerald-500/50 hover:bg-emerald-500/30";
+  if (score >= 50) return "bg-amber-500/20 text-amber-500 border-amber-500/50 hover:bg-amber-500/30";
+  return "bg-destructive/20 text-destructive border-destructive/50 hover:bg-destructive/30";
 };
 
 export default function Plan() {
+  const initialData = useMemo(() => generateMockData(), []);
   const [mealVariations, setMealVariations] = useState<Record<number, number>>({});
-  const [schedule, setSchedule] = useState<Record<string, "duty" | "rest">>(generateMockSchedule());
+  const [schedule, setSchedule] = useState(initialData.schedule);
+  const [stats] = useState(initialData.stats);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const toggleVariation = (index: number, max: number) => {
@@ -50,6 +73,11 @@ export default function Plan() {
   const getStatus = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return schedule[dateStr] || "rest";
+  };
+
+  const getDayStats = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return stats[dateStr];
   };
 
   // View Components
@@ -140,32 +168,69 @@ export default function Plan() {
       ))}
       {days.map((day, i) => {
         const status = getStatus(day);
+        const dayStats = getDayStats(day);
         const isActive = isSameDay(day, currentDate);
         const isTodayDate = isToday(day);
         
+        // Color logic:
+        // Base color depends on performance score (Green/Amber/Red)
+        // If Duty: Solid fill of that color
+        // If Rest: Outline or minimal fill of that color
+        
+        let colorClass = "bg-card border-border hover:bg-muted/10"; // Default
+        
+        if (dayStats) {
+             colorClass = getPerformanceColor(dayStats.score);
+             // Adjust opacity/style for Rest vs Duty
+             if (status === "rest") {
+                 // De-emphasize rest days slightly but keep color coding
+                 colorClass = colorClass.replace('bg-', 'bg-opacity-10 bg-'); 
+             }
+        } else {
+            // Fallback for days without stats (future far out)
+            if (status === "duty") {
+                colorClass = "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20";
+            }
+        }
+
         return (
           <button
             key={i}
             onClick={() => toggleDutyStatus(day)}
             className={cn(
-              "aspect-square rounded-sm border p-1 flex flex-col justify-between transition-all hover:scale-105",
-              status === "duty" 
-                ? "bg-primary/10 border-primary/30 hover:bg-primary/20" 
-                : "bg-card border-border hover:bg-muted/10",
-              isActive && "ring-1 ring-primary shadow-[0_0_10px_rgba(46,204,113,0.2)]"
+              "aspect-square rounded-sm border p-1 flex flex-col justify-between transition-all hover:scale-105 relative overflow-hidden",
+              colorClass,
+              isActive && "ring-1 ring-primary shadow-[0_0_10px_rgba(255,255,255,0.2)]"
             )}
           >
-            <div className="flex justify-between items-start">
+            {/* Tiny progress bar for energy/score */}
+            {dayStats && (
+               <div 
+                 className="absolute bottom-0 left-0 h-1 bg-current opacity-30 transition-all" 
+                 style={{ width: `${dayStats.score}%` }} 
+               />
+            )}
+            
+            <div className="flex justify-between items-start w-full z-10">
               <span className={cn(
                 "text-xs font-mono",
-                isTodayDate ? "text-primary font-bold" : "text-muted-foreground"
+                isTodayDate ? "font-bold underline decoration-2 underline-offset-2" : "opacity-80"
               )}>
                 {format(day, 'd')}
               </span>
-              {status === "duty" && <Plane className="w-3 h-3 text-primary/50" />}
+              {status === "duty" && <Plane className="w-3 h-3 opacity-70" />}
+              {status === "rest" && <Coffee className="w-3 h-3 opacity-70" />}
             </div>
-            <div className="text-[9px] font-mono uppercase tracking-tighter self-end text-muted-foreground">
-              {status === "duty" ? "FLY" : "OFF"}
+            
+            <div className="flex items-end justify-between w-full z-10">
+               <div className="text-[9px] font-mono uppercase tracking-tighter opacity-80">
+                  {status === "duty" ? "FLY" : "OFF"}
+               </div>
+               {dayStats && (
+                 <div className="text-[8px] font-mono opacity-60">
+                    {dayStats.score}%
+                 </div>
+               )}
             </div>
           </button>
         );
@@ -224,8 +289,10 @@ export default function Plan() {
               start: startOfWeek(currentDate),
               end: addDays(startOfWeek(currentDate), 6)
             })} />
-            <div className="bg-muted/10 p-3 rounded border border-border text-xs text-muted-foreground font-mono">
-              <p>TIP: Tap any day to toggle between DUTY and REST status.</p>
+            <div className="grid grid-cols-3 gap-2 mt-4">
+               <div className="bg-emerald-500/10 border border-emerald-500/30 p-2 rounded text-[10px] text-emerald-500 text-center font-mono">OPTIMAL &gt;80%</div>
+               <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded text-[10px] text-amber-500 text-center font-mono">AVG 50-79%</div>
+               <div className="bg-destructive/10 border border-destructive/30 p-2 rounded text-[10px] text-destructive text-center font-mono">LOW &lt;50%</div>
             </div>
           </div>
         </TabsContent>
@@ -233,14 +300,23 @@ export default function Plan() {
         <TabsContent value="monthly">
           <div className="space-y-4">
             <div className="flex justify-between items-center px-1">
-              <h3 className="font-mono text-sm text-primary uppercase">{format(currentDate, "MMMM yyyy")}</h3>
+               <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentDate(addDays(currentDate, -30))}>
+                     <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <h3 className="font-mono text-sm text-primary uppercase w-32 text-center">{format(currentDate, "MMMM yyyy")}</h3>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentDate(addDays(currentDate, 30))}>
+                     <ChevronRight className="h-4 w-4" />
+                  </Button>
+               </div>
             </div>
             <CalendarGrid days={eachDayOfInterval({
               start: startOfMonth(currentDate),
               end: endOfMonth(currentDate)
             })} />
-             <div className="bg-muted/10 p-3 rounded border border-border text-xs text-muted-foreground font-mono">
-              <p>TIP: Tap any day to toggle between DUTY and REST status.</p>
+             <div className="bg-muted/10 p-3 rounded border border-border text-xs text-muted-foreground font-mono flex gap-2 items-center">
+              <Activity className="w-4 h-4" />
+              <p>Colors indicate performance score (Energy/Sleep/Mood).</p>
             </div>
           </div>
         </TabsContent>
