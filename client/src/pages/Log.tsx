@@ -1,7 +1,7 @@
 import { LOG_DATA, DEFAULT_PROFILE, PilotProfile } from "@/lib/mockData";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { Battery, Scale, Moon, Settings, Edit2, Zap, Utensils } from "lucide-react";
+import { Battery, Scale, Moon, Settings, Edit2, Zap, Utensils, Activity, Radio } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -12,13 +12,27 @@ function SimpleSlider({ value, onValueChange, max, className, trackColor = "bg-p
   const percentage = Math.min(100, Math.max(0, (val / max) * 100));
   
   return (
-    <div className={`relative flex items-center select-none touch-none w-full h-6 ${className}`}>
-      <div className={`absolute w-full h-1.5 ${trackColor}/20 rounded-full overflow-hidden`}>
-        <div 
-          className={`h-full ${trackColor} transition-all duration-100 ease-out`} 
-          style={{ width: `${percentage}%` }}
-        />
+    <div className={`relative flex items-center select-none touch-none w-full h-8 ${className}`}>
+      {/* Track Background with Segments */}
+      <div className={`absolute w-full h-2 ${trackColor}/10 rounded-sm overflow-hidden flex gap-[2px]`}>
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={i} className="flex-1 bg-current opacity-20" />
+        ))}
       </div>
+      
+      {/* Active Track */}
+      <div className="absolute w-full h-2 rounded-sm overflow-hidden flex gap-[2px] pointer-events-none">
+        {Array.from({ length: 20 }).map((_, i) => {
+           const isActive = (i + 1) * 5 <= percentage;
+           return (
+             <div 
+               key={i} 
+               className={`flex-1 transition-all duration-100 ${isActive ? trackColor : 'bg-transparent'} ${isActive ? 'opacity-100' : 'opacity-0'}`} 
+             />
+           )
+        })}
+      </div>
+
       <input 
         type="range" 
         min={0} 
@@ -28,10 +42,21 @@ function SimpleSlider({ value, onValueChange, max, className, trackColor = "bg-p
         onChange={(e) => onValueChange([Number(e.target.value)])}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
       />
+      
+      {/* Thumb Indicator */}
       <div 
-        className={`absolute h-4 w-4 rounded-full border border-${trackColor.replace('bg-', '')}/50 bg-background shadow pointer-events-none transition-all duration-100 ease-out z-20`}
-        style={{ left: `calc(${percentage}% - 8px)` }}
+        className={`absolute h-4 w-1 bg-foreground shadow-[0_0_10px_currentColor] pointer-events-none transition-all duration-100 ease-out z-20`}
+        style={{ left: `calc(${percentage}% - 2px)` }}
       />
+    </div>
+  )
+}
+
+function StatusIndicator({ label, active }: { label: string, active?: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div className={`w-2 h-2 rounded-full mb-1 transition-all duration-500 ${active ? 'bg-primary shadow-[0_0_8px_#2ecc71]' : 'bg-muted-foreground/30'}`} />
+      <span className={`text-[8px] font-mono tracking-widest ${active ? 'text-primary' : 'text-muted-foreground/50'}`}>{label}</span>
     </div>
   )
 }
@@ -59,62 +84,99 @@ export default function Log() {
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="mb-6 flex justify-between items-center">
+      <header className="mb-4 flex justify-between items-end border-b border-border/50 pb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Pilot Log</h1>
-          <p className="text-xs text-muted-foreground font-mono">BIOMETRICS & STATUS MONITORING</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-xs font-mono text-primary tracking-widest">LIVE DATA LINK</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-widest text-foreground uppercase">Pilot Log</h1>
         </div>
-        <Link href="/profile">
-           <Button variant="outline" size="sm" className="h-8 font-mono text-xs border-primary/30 text-primary hover:bg-primary/10">
-             <Settings className="w-3 h-3 mr-2" /> SETUP PROFILE
+        
+        <div className="flex gap-4">
+          <StatusIndicator label="SYNC" active />
+          <StatusIndicator label="REC" active />
+          <StatusIndicator label="GPS" />
+        </div>
+      </header>
+      
+      <div className="flex justify-end mb-4">
+         <Link href="/profile">
+           <Button variant="outline" size="sm" className="h-7 font-mono text-[10px] border-primary/30 text-primary hover:bg-primary/10 uppercase tracking-wider">
+             <Settings className="w-3 h-3 mr-2" /> Sys Config
            </Button>
         </Link>
-      </header>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <CockpitCard className="items-center justify-center py-4 gap-2 relative group cursor-pointer hover:border-primary/50 transition-colors">
-          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Edit2 className="w-3 h-3 text-muted-foreground" />
-          </div>
-          <Scale className="w-5 h-5 text-muted-foreground" />
-          <div className="text-center w-full">
-             <Input 
-               type="number" 
-               className="text-lg font-mono font-bold text-center border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-foreground w-full" 
-               value={profile.weight}
-               onChange={(e) => handleUpdate('weight', Number(e.target.value))}
-             />
-             <div className="text-[10px] text-muted-foreground uppercase">Kg</div>
-          </div>
-        </CockpitCard>
-        
-        <CockpitCard className="items-center justify-center py-4 gap-2">
-          <Moon className="w-5 h-5 text-muted-foreground" />
-          <div className="text-center">
-             <div className="text-lg font-mono font-bold">7.5</div>
-             <div className="text-[10px] text-muted-foreground uppercase">Hrs Sleep</div>
-          </div>
-        </CockpitCard>
-        
-        <CockpitCard className="items-center justify-center py-4 gap-2">
-          <Battery className="w-5 h-5 text-primary" />
-          <div className="text-center">
-             <div className="text-lg font-mono font-bold text-primary">{dailyStats.energy}%</div>
-             <div className="text-[10px] text-muted-foreground uppercase">Energy</div>
-          </div>
-        </CockpitCard>
       </div>
 
-      <CockpitCard title="Daily Status Report">
-         <div className="space-y-6">
-           <div className="space-y-3">
-             <div className="flex justify-between items-center">
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Weight Panel */}
+        <div className="bg-card border border-border rounded-sm relative group overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+          <div className="p-3 flex flex-col items-center">
+            <div className="flex items-center justify-between w-full mb-2">
+              <Scale className="w-3 h-3 text-muted-foreground" />
+              <div className="text-[8px] font-mono text-muted-foreground uppercase">WGT.LOAD</div>
+            </div>
+            <div className="relative">
+              <Input 
+                 type="number" 
+                 className="text-xl font-mono font-bold text-center border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-foreground w-full" 
+                 value={profile.weight}
+                 onChange={(e) => handleUpdate('weight', Number(e.target.value))}
+               />
+               <div className="absolute top-0 right-0 -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit2 className="w-2 h-2 text-primary" />
+               </div>
+            </div>
+            <div className="text-[10px] text-muted-foreground font-mono mt-1">KG</div>
+          </div>
+          {/* Corner Decals */}
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border/50" />
+        </div>
+        
+        {/* Sleep Panel */}
+        <div className="bg-card border border-border rounded-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+          <div className="p-3 flex flex-col items-center">
+            <div className="flex items-center justify-between w-full mb-2">
+              <Moon className="w-3 h-3 text-muted-foreground" />
+              <div className="text-[8px] font-mono text-muted-foreground uppercase">REST.CYC</div>
+            </div>
+            <div className="text-xl font-mono font-bold">7.5</div>
+            <div className="text-[10px] text-muted-foreground font-mono mt-1">HRS</div>
+          </div>
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
+           <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border/50" />
+        </div>
+        
+        {/* Energy Panel */}
+        <div className="bg-card border border-border rounded-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+          <div className="p-3 flex flex-col items-center">
+             <div className="flex items-center justify-between w-full mb-2">
+              <Battery className="w-3 h-3 text-primary" />
+              <div className="text-[8px] font-mono text-primary uppercase">PWR.LVL</div>
+            </div>
+             <div className="text-xl font-mono font-bold text-primary text-shadow-glow">{dailyStats.energy}%</div>
+             <div className="text-[10px] text-muted-foreground font-mono mt-1">CAPACITY</div>
+          </div>
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-border/50" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-border/50" />
+        </div>
+      </div>
+
+      <CockpitCard title="Daily Status // MAN.INPUT">
+         <div className="space-y-6 px-1">
+           {/* Energy Slider */}
+           <div className="space-y-2">
+             <div className="flex justify-between items-end">
                <div className="flex items-center gap-2">
                  <Zap className="w-4 h-4 text-primary" />
-                 <span className="text-sm font-medium">Energy Level</span>
+                 <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Energy Reserve</span>
                </div>
-               <span className="font-mono text-xs text-muted-foreground">{dailyStats.energy}%</span>
+               <span className="font-mono text-sm text-primary font-bold">{dailyStats.energy}%</span>
              </div>
              <SimpleSlider 
                value={[dailyStats.energy]} 
@@ -124,13 +186,14 @@ export default function Log() {
              />
            </div>
 
-           <div className="space-y-3">
-             <div className="flex justify-between items-center">
+           {/* Hunger Slider */}
+           <div className="space-y-2">
+             <div className="flex justify-between items-end">
                <div className="flex items-center gap-2">
                  <Utensils className="w-4 h-4 text-secondary" />
-                 <span className="text-sm font-medium">Hunger Level</span>
+                 <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Hunger Index</span>
                </div>
-               <span className="font-mono text-xs text-muted-foreground">{dailyStats.hunger}%</span>
+               <span className="font-mono text-sm text-secondary font-bold">{dailyStats.hunger}%</span>
              </div>
              <SimpleSlider 
                value={[dailyStats.hunger]} 
@@ -140,56 +203,79 @@ export default function Log() {
              />
            </div>
            
-           <div className="pt-2 border-t border-border/50">
-             <div className="text-xs font-mono text-muted-foreground mb-2 uppercase">Subjective Mood</div>
-             <div className="flex justify-between">
+           {/* Mood Selector */}
+           <div className="pt-4 border-t border-border/30 border-dashed">
+             <div className="flex items-center gap-2 mb-3">
+               <Radio className="w-4 h-4 text-muted-foreground" />
+               <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Subjective State</div>
+             </div>
+             
+             <div className="flex justify-between gap-2">
                {[1, 2, 3, 4, 5].map((level) => (
                  <button
                    key={level}
                    onClick={() => setDailyStats({...dailyStats, mood: level})}
-                   className={`w-10 h-10 rounded-md border flex items-center justify-center transition-all ${
+                   className={`flex-1 h-12 rounded-sm border relative overflow-hidden group transition-all ${
                      dailyStats.mood === level 
-                       ? "bg-accent border-primary text-primary shadow-[0_0_10px_rgba(46,204,113,0.2)]" 
-                       : "border-border text-muted-foreground hover:border-primary/50"
+                       ? "bg-primary/10 border-primary shadow-[0_0_15px_rgba(46,204,113,0.15)]" 
+                       : "bg-card border-border hover:border-primary/50"
                    }`}
                  >
-                   {level}
+                   {/* Scanline effect for active state */}
+                   {dailyStats.mood === level && (
+                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent animate-scan" />
+                   )}
+                   
+                   <div className={`flex flex-col items-center justify-center h-full relative z-10 font-mono ${dailyStats.mood === level ? 'text-primary' : 'text-muted-foreground'}`}>
+                     <span className="text-lg font-bold">{level}</span>
+                   </div>
                  </button>
                ))}
              </div>
-             <div className="flex justify-between text-[10px] text-muted-foreground mt-1 px-1 font-mono uppercase">
-               <span>Low</span>
-               <span>High</span>
+             <div className="flex justify-between text-[9px] text-muted-foreground mt-1 px-1 font-mono uppercase tracking-widest opacity-60">
+               <span>Fatigued</span>
+               <span>Optimal</span>
              </div>
            </div>
          </div>
       </CockpitCard>
 
-      <div className="bg-muted/10 border border-border rounded-md p-4 flex flex-col gap-2">
-        <h3 className="font-mono text-xs text-muted-foreground uppercase">Current Profile Configuration</h3>
-        <div className="grid grid-cols-2 gap-y-2 text-sm font-medium">
-           <div className="flex justify-between">
-             <span>Goal:</span>
-             <span className="text-primary font-mono">{profile.goal}</span>
+      <div className="bg-card border border-border rounded-sm p-4 relative overflow-hidden">
+        {/* Decorative background grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:10px_10px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
+        
+        <div className="flex justify-between items-center mb-3 relative z-10">
+          <h3 className="font-mono text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2 h-2 bg-primary/50 rounded-full animate-pulse" />
+            Active Configuration
+          </h3>
+          <span className="text-[10px] font-mono text-primary border border-primary/30 px-1 rounded">V.1.0</span>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-2 text-xs font-mono relative z-10">
+           <div className="bg-muted/10 p-2 border border-border/50">
+             <div className="text-muted-foreground mb-1 text-[9px]">PROFILE</div>
+             <div className="text-primary truncate">{profile.goal.toUpperCase()}</div>
            </div>
-           <div className="flex justify-between">
-             <span>Activity:</span>
-             <span className="text-foreground font-mono">{profile.activityLevel}</span>
+           <div className="bg-muted/10 p-2 border border-border/50">
+             <div className="text-muted-foreground mb-1 text-[9px]">ACT.LVL</div>
+             <div className="text-foreground truncate">{profile.activityLevel.substring(0, 8).toUpperCase()}</div>
            </div>
-           <div className="flex justify-between">
-             <span>Height:</span>
-             <span className="text-foreground font-mono">{profile.height}cm</span>
+           <div className="bg-muted/10 p-2 border border-border/50">
+             <div className="text-muted-foreground mb-1 text-[9px]">HGT.REF</div>
+             <div className="text-foreground">{profile.height}CM</div>
            </div>
         </div>
+        
         <Link href="/profile">
-          <Button variant="ghost" className="w-full mt-2 text-xs font-mono h-8 border border-dashed border-border hover:border-primary/50">
-            UPDATE PARAMETERS
+          <Button variant="ghost" className="w-full mt-3 text-[10px] font-mono h-8 border border-primary/20 hover:bg-primary/5 hover:border-primary/50 text-primary uppercase tracking-widest relative z-10">
+            Re-Calibrate Parameters
           </Button>
         </Link>
       </div>
 
       {/* Chart */}
-      <CockpitCard title="Weight Trend (7 Days)" className="h-64">
+      <CockpitCard title="Trend Analysis // 7-DAY" className="h-64">
         <div className="h-full w-full pt-4 -ml-4">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={LOG_DATA}>
@@ -203,27 +289,31 @@ export default function Log() {
               <XAxis 
                 dataKey="day" 
                 stroke="hsl(215, 15%, 60%)" 
-                fontSize={12} 
+                fontSize={10} 
                 tickLine={false}
                 axisLine={false}
+                fontFamily="JetBrains Mono"
               />
               <YAxis 
                 domain={['auto', 'auto']} 
                 stroke="hsl(215, 15%, 60%)" 
-                fontSize={12} 
+                fontSize={10} 
                 tickLine={false}
                 axisLine={false}
                 width={30}
+                fontFamily="JetBrains Mono"
               />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(220, 14%, 13%)', 
                   borderColor: 'hsl(220, 14%, 22%)',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   fontFamily: 'JetBrains Mono',
-                  fontSize: '12px'
+                  fontSize: '12px',
+                  textTransform: 'uppercase'
                 }}
                 itemStyle={{ color: 'hsl(142, 70%, 45%)' }}
+                cursor={{ stroke: 'hsl(142, 70%, 45%)', strokeWidth: 1, strokeDasharray: '4 4' }}
               />
               <Area 
                 type="monotone" 
