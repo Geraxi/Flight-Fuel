@@ -26,6 +26,7 @@ export interface Advisory {
   id: string;
   level: "info" | "amber" | "warning";
   message: string;
+  icon?: string;
 }
 
 export interface PilotProfile {
@@ -60,8 +61,8 @@ export const SUPPLEMENT_STACK = [
 ];
 
 export const ADVISORIES: Advisory[] = [
-  { id: "1", level: "amber", message: "Circadian Low: 1400-1600 LT" },
-  { id: "2", level: "info", message: "Hydration Status: Optimal" },
+  { id: "1", level: "amber", message: "Circadian Low: 1400-1600 LT", icon: "Clock" },
+  { id: "2", level: "info", message: "Hydration Status: Optimal", icon: "Droplets" },
 ];
 
 export const PLAN_PHASES = [

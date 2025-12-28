@@ -1,6 +1,6 @@
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES, SUPPLEMENT_STACK } from "@/lib/mockData";
-import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill } from "lucide-react";
+import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Droplets, Info } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 
@@ -13,6 +13,14 @@ export default function FlightDeck() {
         ? { ...item, status: item.status === "complete" ? "pending" : "complete" }
         : item
     ));
+  };
+
+  const getIcon = (iconName?: string) => {
+    switch (iconName) {
+      case "Clock": return <Clock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
+      case "Droplets": return <Droplets className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
+      default: return <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
+    }
   };
 
   return (
@@ -64,7 +72,7 @@ export default function FlightDeck() {
           <div className="space-y-3">
             {ADVISORIES.map((adv) => (
               <div key={adv.id} className="flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                {getIcon(adv.icon)}
                 <span className="font-mono text-sm text-secondary">{adv.message}</span>
               </div>
             ))}
