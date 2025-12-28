@@ -1,6 +1,6 @@
 import { CockpitCard } from "@/components/ui/CockpitCard";
-import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES } from "@/lib/mockData";
-import { Plane, AlertTriangle, CheckCircle2, Circle, Settings } from "lucide-react";
+import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES, SUPPLEMENT_STACK } from "@/lib/mockData";
+import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 
@@ -95,6 +95,29 @@ export default function FlightDeck() {
           </div>
         ))}
       </div>
+
+      {/* Supplement Protocol */}
+      <CockpitCard title="Supplement Protocol">
+        <div className="space-y-3">
+          {SUPPLEMENT_STACK.map((supp) => (
+            <div key={supp.id} className="flex items-center justify-between border-b border-border/50 last:border-0 pb-2 last:pb-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                   <Pill className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm">{supp.name}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{supp.type.toUpperCase()}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-mono text-sm text-primary">{supp.dose}</div>
+                <div className="text-[10px] text-muted-foreground font-mono uppercase">{supp.timing}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CockpitCard>
     </div>
   );
 }

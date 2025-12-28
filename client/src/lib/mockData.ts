@@ -47,7 +47,14 @@ export const CURRENT_DUTY: DutyStatus = {
 export const CHECKLIST_ITEMS: ChecklistItem[] = [
   { id: "1", label: "Fuel Strategy", status: "complete", value: "Carb Load" },
   { id: "2", label: "Fluid Load", status: "pending", value: "1.5L Rqd" },
-  { id: "3", label: "Supplements", status: "pending", value: "Caffeine 100mg" },
+  { id: "3", label: "Supplement Protocol", status: "pending", value: "Active" },
+];
+
+export const SUPPLEMENT_STACK = [
+  { id: "s1", name: "Caffeine", dose: "100mg", timing: "Pre-Duty", type: "Performance" },
+  { id: "s2", name: "Omega-3", dose: "2g", timing: "AM Meal", type: "Health" },
+  { id: "s3", name: "Vitamin D3", dose: "5000 IU", timing: "AM Meal", type: "Immunity" },
+  { id: "s4", name: "Vitamin C", dose: "1g", timing: "Post-Duty", type: "Recovery" },
 ];
 
 export const ADVISORIES: Advisory[] = [
