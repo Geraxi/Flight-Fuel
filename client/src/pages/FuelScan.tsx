@@ -69,7 +69,7 @@ export default function FuelScan() {
           <div className="bg-secondary/10 border border-secondary/30 rounded p-3 flex gap-3 items-start">
              <div className="text-secondary font-mono text-xs pt-0.5">NOTE:</div>
              <p className="text-xs text-muted-foreground">
-               Nutritional values are estimates for educational purposes only. Not medical advice.
+               Nutritional values are estimates for educational purposes only. Example food items are common choices, not medical prescriptions.
              </p>
           </div>
         </div>

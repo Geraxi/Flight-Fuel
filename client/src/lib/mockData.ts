@@ -50,25 +50,25 @@ export const PLAN_PHASES = [
   {
     time: "04:30 - 05:30",
     phase: "Pre-Duty",
-    guidance: "Complex Carbs + Protein. 500ml Water.",
+    guidance: "Examples: Eggs with oats and fruit, or Greek yogurt with honey and nuts. 500ml Water.",
     icon: "Coffee",
   },
   {
     time: "05:30 - 11:00",
     phase: "Cruise / Duty",
-    guidance: "Light snacks every 2h. Avoid heavy fats. Hydrate continuously.",
+    guidance: "Examples: Wraps, salads with lean protein, fruit, nuts, or protein bars. Light snacks every 2h. Avoid heavy fats.",
     icon: "Plane",
   },
   {
     time: "11:00 - 12:00",
     phase: "Post-Duty",
-    guidance: "Recovery meal within 60min. High protein focus.",
+    guidance: "Examples: Grilled chicken or fish with rice and vegetables, or turkey sandwich with vegetables. Recovery meal within 60min.",
     icon: "Utensils",
   },
   {
     time: "20:00",
     phase: "Recovery",
-    guidance: "Magnesium support. No blue light.",
+    guidance: "Examples: Chamomile tea, Magnesium support. No blue light.",
     icon: "Moon",
   },
 ];
