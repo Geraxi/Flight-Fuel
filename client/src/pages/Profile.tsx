@@ -121,21 +121,6 @@ export default function Profile() {
 
   const daysUntilMedical = getDaysUntilMedical();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast({
-        title: "Logged Out",
-        description: "Session terminated successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Logout Failed",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -149,15 +134,16 @@ export default function Profile() {
             <p className="text-xs text-muted-foreground font-mono">{user?.username}</p>
           </div>
         </div>
-        <Button
-          data-testid="button-logout"
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-        >
-          <LogOut className="w-4 h-4" />
-        </Button>
+        <SignOutButton>
+          <Button
+            data-testid="button-logout"
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </SignOutButton>
       </header>
 
       {/* Medical Readiness Section */}
