@@ -76,7 +76,16 @@ function Router() {
   return (
     <>
       <SignedOut>
-        <RedirectToSignIn />
+        <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] via-[#1a1f35] to-[#0f1419] flex items-center justify-center p-4">
+          <SignIn 
+            appearance={{
+              elements: {
+                rootBox: "mx-auto",
+                card: "bg-[#1a1f35] border border-cyan-500/20",
+              }
+            }}
+          />
+        </div>
       </SignedOut>
       <SignedIn>
         <AuthProvider>
