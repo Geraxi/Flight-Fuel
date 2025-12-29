@@ -199,6 +199,19 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/nutrition/summary/:date", requireAuth(), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const summary = await storage.getNutritionSummaryByDate(userId, req.params.date);
+      res.json(summary);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Training routes
   app.get("/api/training", requireAuth(), async (req, res, next) => {
     try {

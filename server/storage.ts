@@ -56,6 +56,7 @@ export interface IStorage {
   // Nutrition methods
   getNutritionLogs(userId: string): Promise<NutritionLog[]>;
   getNutritionLogsByDate(userId: string, date: string): Promise<NutritionLog[]>;
+  getNutritionSummaryByDate(userId: string, date: string): Promise<{ calories: number; protein: number; carbs: number; fat: number }>;
   createNutritionLog(log: InsertNutritionLog): Promise<NutritionLog>;
   deleteNutritionLog(id: string): Promise<void>;
 
@@ -258,6 +259,19 @@ export class DatabaseStorage implements IStorage {
   async getNutritionLogsByDate(userId: string, date: string): Promise<NutritionLog[]> {
     return await db.select().from(nutritionLogs).where(
       and(eq(nutritionLogs.userId, userId), eq(nutritionLogs.date, date))
+    );
+  }
+
+  async getNutritionSummaryByDate(userId: string, date: string): Promise<{ calories: number; protein: number; carbs: number; fat: number }> {
+    const logs = await this.getNutritionLogsByDate(userId, date);
+    return logs.reduce(
+      (acc, log) => ({
+        calories: acc.calories + log.calories,
+        protein: acc.protein + log.protein,
+        carbs: acc.carbs + log.carbs,
+        fat: acc.fat + log.fat,
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
   }
 
