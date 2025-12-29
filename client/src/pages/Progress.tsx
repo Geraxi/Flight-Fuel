@@ -1,12 +1,16 @@
 import { useState, useRef } from "react";
+import { useLocation } from "wouter";
 import { CockpitCard, Annunciator } from "@/components/ui/CockpitCard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, Brain, ScanLine, Activity, Zap, Scale, User, ArrowRight, Sparkles } from "lucide-react";
+import { Camera, Upload, Brain, ScanLine, Activity, Zap, Scale, User, ArrowRight, Sparkles, Lock } from "lucide-react";
+import { usePremium } from "@/lib/premium";
 
 type ViewMode = "hero" | "scan" | "results";
 
 export default function Progress() {
+  const [, setLocation] = useLocation();
+  const { isPremium } = usePremium();
   const [viewMode, setViewMode] = useState<ViewMode>("hero");
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
@@ -65,51 +69,95 @@ export default function Progress() {
           <p className="text-[10px] text-muted-foreground font-mono tracking-wider">VISUAL ANALYSIS SYSTEM</p>
         </header>
 
-        <div 
-          className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 cursor-pointer group"
-          onClick={() => setViewMode("scan")}
-          data-testid="button-body-scan-hero"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl" />
-          
-          <div className="absolute top-3 right-3">
-            <Annunciator status="cyan">READY</Annunciator>
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center text-center py-4">
-            <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-              <User className="w-10 h-10 text-primary" />
-              <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
-            </div>
+        {isPremium ? (
+          <div 
+            className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 cursor-pointer group"
+            onClick={() => setViewMode("scan")}
+            data-testid="button-body-scan-hero"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl" />
             
-            <h2 className="text-2xl font-bold tracking-wider text-foreground mb-2 flex items-center gap-2">
-              <ScanLine className="w-6 h-6 text-primary" />
-              BODY SCAN
-            </h2>
-            
-            <p className="text-sm text-muted-foreground mb-6 max-w-[280px]">
-              Compare before & after photos to track your physical transformation
-            </p>
+            <div className="absolute top-3 right-3">
+              <Annunciator status="cyan">READY</Annunciator>
+            </div>
 
-            <Button 
-              size="lg" 
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-mono tracking-wider px-8 group-hover:scale-105 transition-transform"
-              data-testid="button-start-body-scan"
-            >
-              <Camera className="w-5 h-5 mr-2" />
-              START BODY SCAN
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
+            <div className="relative z-10 flex flex-col items-center text-center py-4">
+              <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary/50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <User className="w-10 h-10 text-primary" />
+                <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
+              </div>
+              
+              <h2 className="text-2xl font-bold tracking-wider text-foreground mb-2 flex items-center gap-2">
+                <ScanLine className="w-6 h-6 text-primary" />
+                BODY SCAN
+              </h2>
+              
+              <p className="text-sm text-muted-foreground mb-6 max-w-[280px]">
+                Compare before & after photos to track your physical transformation
+              </p>
 
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center">
-            <div className="flex items-center gap-2 text-[10px] text-primary/60 font-mono">
-              <Sparkles className="w-3 h-3" />
-              <span>AI-POWERED ANALYSIS</span>
+              <Button 
+                size="lg" 
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-mono tracking-wider px-8 group-hover:scale-105 transition-transform"
+                data-testid="button-start-body-scan"
+              >
+                <Camera className="w-5 h-5 mr-2" />
+                START BODY SCAN
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center">
+              <div className="flex items-center gap-2 text-[10px] text-primary/60 font-mono">
+                <Sparkles className="w-3 h-3" />
+                <span>AI-POWERED ANALYSIS</span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-6">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl" />
+            
+            <div className="absolute top-3 right-3">
+              <Annunciator status="amber">LOCKED</Annunciator>
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center text-center py-4">
+              <div className="w-20 h-20 rounded-full bg-amber-500/20 border-2 border-amber-500/50 flex items-center justify-center mb-4">
+                <Lock className="w-10 h-10 text-amber-400" />
+              </div>
+              
+              <h2 className="text-2xl font-bold tracking-wider text-foreground mb-2 flex items-center gap-2">
+                <ScanLine className="w-6 h-6 text-amber-400" />
+                BODY SCAN
+              </h2>
+              
+              <p className="text-sm text-muted-foreground mb-6 max-w-[280px]">
+                AI-powered body composition tracking is available with FlightFuel Premium
+              </p>
+
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 font-mono tracking-wider px-8"
+                onClick={() => setLocation('/upgrade')}
+                data-testid="button-upgrade-body-scan"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                UPGRADE TO PREMIUM
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center">
+              <div className="flex items-center gap-2 text-[10px] text-amber-400/60 font-mono">
+                <Lock className="w-3 h-3" />
+                <span>PREMIUM FEATURE</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-3">
           <div className="instrument-bezel p-4 text-center">
