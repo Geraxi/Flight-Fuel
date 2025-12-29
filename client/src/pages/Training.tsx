@@ -311,21 +311,20 @@ export default function Training() {
                                         <DialogHeader>
                                           <DialogTitle className="flex items-center gap-2">
                                             {currentName}
-                                            {ex.originalDef.video && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">Video</span>}
+                                            {ex.originalDef.youtubeId && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">Video</span>}
                                           </DialogTitle>
                                           <DialogDescription>
                                             {ex.originalDef.description}
                                           </DialogDescription>
                                         </DialogHeader>
                                         <div className="rounded-lg overflow-hidden mt-2 bg-black/5">
-                                          {ex.originalDef.video ? (
-                                            <video 
-                                              src={ex.originalDef.video} 
-                                              controls 
-                                              autoPlay 
-                                              loop 
-                                              muted 
-                                              className="w-full aspect-video object-cover"
+                                          {ex.originalDef.youtubeId ? (
+                                            <iframe
+                                              src={`https://www.youtube.com/embed/${ex.originalDef.youtubeId}?rel=0`}
+                                              title={currentName}
+                                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                              allowFullScreen
+                                              className="w-full aspect-video"
                                             />
                                           ) : (
                                             <img 

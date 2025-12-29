@@ -10,7 +10,6 @@ import burpeeImg from "@assets/stock_images/person_doing_burpees_cd8df69e.jpg";
 import thoracicImg from "@assets/stock_images/person_doing_thoraci_08fb0201.jpg";
 import hipImg from "@assets/stock_images/man_doing_hip_mobili_674c5330.jpg";
 import ankleImg from "@assets/stock_images/person_doing_ankle_d_f151f55d.jpg";
-import squatVideo from "@assets/generated_videos/correct_form_of_a_barbell_squat.mp4";
 
 export interface ExerciseDef {
   name: string;
@@ -18,7 +17,7 @@ export interface ExerciseDef {
   reps: string;
   rest: string;
   image: string;
-  video?: string;
+  youtubeId?: string;
   description: string;
   isCardio?: boolean;
 }
@@ -31,7 +30,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "6-8", 
       rest: "3m", 
       image: squatImg, 
-      video: squatVideo,
+      youtubeId: "bEv6CCg2BC8",
       description: "Keep chest up, core tight. Break at hips and knees simultaneously. Drive through mid-foot."
     },
     { 
@@ -40,6 +39,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "8-10", 
       rest: "2m", 
       image: rdlImg,
+      youtubeId: "jEy_czb3RKA",
       description: "Hinge at the hips, keeping legs slightly bent. Lower bar while keeping it close to shins. Feel the stretch in hamstrings."
     },
     { 
@@ -48,6 +48,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "8-10", 
       rest: "2m", 
       image: ohpImg,
+      youtubeId: "2yjwXTZQDDI",
       description: "Strict press from collarbone to lockout. Keep core braced and glutes squeezed. Don't arch lower back."
     },
     { 
@@ -56,6 +57,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "AMRAP", 
       rest: "2m", 
       image: pullupImg,
+      youtubeId: "eGo4IYlbE5g",
       description: "Full range of motion. Chin over bar at top, full hang at bottom. Control the descent."
     },
   ],
@@ -66,6 +68,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "500m", 
       rest: "1:1", 
       image: rowImg,
+      youtubeId: "zQ82RYIFLN8",
       description: "Drive with legs, then swing body, then pull arms. Reverse on recovery. Maintain consistent stroke rate.",
       isCardio: true
     },
@@ -75,6 +78,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "20", 
       rest: "1m", 
       image: swingImg,
+      youtubeId: "YSxHifyI6s8",
       description: "Explosive hip hinge. Snap hips forward to propel bell. Arms act as ropes, not movers."
     },
     { 
@@ -83,6 +87,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "12", 
       rest: "90s", 
       image: boxJumpImg,
+      youtubeId: "52r_Ul5k03g",
       description: "Soft landing. Stand tall at top. Step down, do not rebound jump unless advanced."
     },
     { 
@@ -91,6 +96,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "15", 
       rest: "60s", 
       image: burpeeImg,
+      youtubeId: "dZgVxmf6jkA",
       description: "Chest to floor. Explosive jump up. Clap behind head. Maintain pace."
     },
   ],
@@ -101,6 +107,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "10/side", 
       rest: "-", 
       image: thoracicImg,
+      youtubeId: "SB5gsT6X5Vk",
       description: "Open up the chest and upper back. Follow hand with eyes. Breathe into the stretch."
     },
     { 
@@ -109,6 +116,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "60s/side", 
       rest: "-", 
       image: hipImg,
+      youtubeId: "8p6FtlqpAYg",
       description: "Front leg at 90 degrees, back leg at 90 degrees. Lean forward with flat back for external rotation stretch."
     },
     { 
@@ -117,6 +125,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "15/side", 
       rest: "-", 
       image: ankleImg,
+      youtubeId: "IikP_teeLkI",
       description: "Drive knee over toe while keeping heel planted. Use bodyweight or weight to increase range."
     },
   ]
