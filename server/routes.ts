@@ -48,6 +48,9 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Unauthorized" });
       }
 
+      // Ensure user exists in our database before creating profile
+      await storage.ensureUserExists(userId);
+
       const result = insertUserProfileSchema.safeParse({ ...req.body, userId });
       if (!result.success) {
         return res.status(400).json({ message: fromZodError(result.error).message });

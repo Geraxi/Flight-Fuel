@@ -27,6 +27,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  ensureUserExists(clerkUserId: string): Promise<User>;
 
   // Profile methods
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
@@ -77,6 +78,18 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .insert(users)
       .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async ensureUserExists(clerkUserId: string): Promise<User> {
+    const existingUser = await this.getUser(clerkUserId);
+    if (existingUser) {
+      return existingUser;
+    }
+    const [user] = await db
+      .insert(users)
+      .values({ id: clerkUserId, username: clerkUserId, password: "clerk-managed" })
       .returning();
     return user;
   }
