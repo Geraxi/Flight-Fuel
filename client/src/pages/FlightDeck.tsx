@@ -1,6 +1,6 @@
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES, SUPPLEMENT_STACK } from "@/lib/mockData";
-import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Droplets, Info } from "lucide-react";
+import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Droplets, Info, Zap, Heart, Shield, Brain, Dumbbell, Moon } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
@@ -21,6 +21,18 @@ export default function FlightDeck() {
       case "Clock": return <Clock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
       case "Droplets": return <Droplets className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
       default: return <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
+    }
+  };
+
+  const getSupplementIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "performance": return <Zap className="w-4 h-4 text-yellow-400" />;
+      case "health": return <Heart className="w-4 h-4 text-red-400" />;
+      case "immunity": return <Shield className="w-4 h-4 text-blue-400" />;
+      case "cognitive/power": return <Brain className="w-4 h-4 text-purple-400" />;
+      case "recovery": return <Dumbbell className="w-4 h-4 text-orange-400" />;
+      case "sleep support": return <Moon className="w-4 h-4 text-indigo-400" />;
+      default: return <Pill className="w-4 h-4 text-primary" />;
     }
   };
 
@@ -124,7 +136,7 @@ export default function FlightDeck() {
             <div key={supp.id} className="flex items-center justify-between border-b border-border/50 last:border-0 pb-2 last:pb-0">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                   <Pill className="w-4 h-4 text-primary" />
+                   {getSupplementIcon(supp.type)}
                 </div>
                 <div>
                   <div className="font-medium text-sm">{supp.name}</div>
