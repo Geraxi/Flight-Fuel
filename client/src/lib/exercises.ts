@@ -17,7 +17,7 @@ export interface ExerciseDef {
   reps: string;
   rest: string;
   image: string;
-  videoUrl?: string;
+  youtubeId?: string;
   description: string;
   isCardio?: boolean;
 }
@@ -30,7 +30,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "6-8", 
       rest: "3m", 
       image: squatImg, 
-      videoUrl: "https://www.muscleandstrength.com/exercises/squat.html",
+      youtubeId: "R2dMsNhN3DE",
       description: "Keep chest up, core tight. Break at hips and knees simultaneously. Drive through mid-foot."
     },
     { 
@@ -39,7 +39,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "8-10", 
       rest: "2m", 
       image: rdlImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/romanian-deadlift.html",
+      youtubeId: "JCXUYuzwNrM",
       description: "Hinge at the hips, keeping legs slightly bent. Lower bar while keeping it close to shins. Feel the stretch in hamstrings."
     },
     { 
@@ -48,7 +48,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "8-10", 
       rest: "2m", 
       image: ohpImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/military-press.html",
+      youtubeId: "j7ULT6dznNc",
       description: "Strict press from collarbone to lockout. Keep core braced and glutes squeezed. Don't arch lower back."
     },
     { 
@@ -57,7 +57,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "AMRAP", 
       rest: "2m", 
       image: pullupImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/pull-up.html",
+      youtubeId: "eGo4IYlbE5g",
       description: "Full range of motion. Chin over bar at top, full hang at bottom. Control the descent."
     },
   ],
@@ -68,7 +68,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "500m", 
       rest: "1:1", 
       image: rowImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/rowing-machine.html",
+      youtubeId: "zQ82RYIFLN8",
       description: "Drive with legs, then swing body, then pull arms. Reverse on recovery. Maintain consistent stroke rate.",
       isCardio: true
     },
@@ -78,7 +78,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "20", 
       rest: "1m", 
       image: swingImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/kettlebell-swing",
+      youtubeId: "YSxHifyI6s8",
       description: "Explosive hip hinge. Snap hips forward to propel bell. Arms act as ropes, not movers."
     },
     { 
@@ -87,7 +87,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "12", 
       rest: "90s", 
       image: boxJumpImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/box-jump.html",
+      youtubeId: "52r_Ul5k03g",
       description: "Soft landing. Stand tall at top. Step down, do not rebound jump unless advanced."
     },
     { 
@@ -96,7 +96,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "15", 
       rest: "60s", 
       image: burpeeImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/burpee.html",
+      youtubeId: "dZgVxmf6jkA",
       description: "Chest to floor. Explosive jump up. Clap behind head. Maintain pace."
     },
   ],
@@ -107,7 +107,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "10/side", 
       rest: "-", 
       image: thoracicImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/lying-thoracic-rotation",
+      youtubeId: "SB5gsT6X5Vk",
       description: "Open up the chest and upper back. Follow hand with eyes. Breathe into the stretch."
     },
     { 
@@ -116,7 +116,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "60s/side", 
       rest: "-", 
       image: hipImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/90-90-stretch.html",
+      youtubeId: "8p6FtlqpAYg",
       description: "Front leg at 90 degrees, back leg at 90 degrees. Lean forward with flat back for external rotation stretch."
     },
     { 
@@ -125,7 +125,7 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "15/side", 
       rest: "-", 
       image: ankleImg,
-      videoUrl: "https://www.muscleandstrength.com/exercises/wall-ankle-dorsiflexion.html",
+      youtubeId: "IikP_teeLkI",
       description: "Drive knee over toe while keeping heel planted. Use bodyweight or weight to increase range."
     },
   ]
