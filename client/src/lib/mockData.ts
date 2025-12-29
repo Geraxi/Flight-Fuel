@@ -63,9 +63,11 @@ export const CURRENT_DUTY: DutyStatus = {
 };
 
 export const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { id: "1", label: "Fuel Strategy", status: "complete", value: "Carb Load" },
-  { id: "2", label: "Fluid Load", status: "pending", value: "1.5L Rqd" },
-  { id: "3", label: "Supplement Protocol", status: "pending", value: "Active" },
+  { id: "1", label: "Eat breakfast: 30g protein + 40g carbs", status: "complete", value: "Pre-Duty Meal" },
+  { id: "2", label: "Drink 500ml water before departure", status: "pending", value: "Hydration" },
+  { id: "3", label: "Take Vitamin D3 (5000 IU) + Omega-3 (2g)", status: "pending", value: "AM Supplements" },
+  { id: "4", label: "Pack 2 snacks: protein bar + fruit", status: "pending", value: "Duty Fuel" },
+  { id: "5", label: "Prep 1L water bottle for cockpit", status: "pending", value: "In-Flight" },
 ];
 
 export const SUPPLEMENT_STACK = [
