@@ -14,6 +14,11 @@ createRoot(document.getElementById("root")!).render(
     publishableKey={PUBLISHABLE_KEY}
     afterSignInUrl="/"
     afterSignUpUrl="/"
+    allowedRedirectOrigins={[
+      window.location.origin,
+      /https:\/\/.*\.replit\.dev/,
+      /https:\/\/.*\.replit\.app/,
+    ]}
   >
     <App />
   </ClerkProvider>
