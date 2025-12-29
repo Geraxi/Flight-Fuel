@@ -1,5 +1,6 @@
 import { PLAN_PHASES } from "@/lib/mockData";
-import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity, MapPin, Clock, ArrowRight, X, Plus } from "lucide-react";
+import { Coffee, Plane, Utensils, Moon, RefreshCw, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Activity, MapPin, Clock, ArrowRight, X, Plus, Lock, Sparkles } from "lucide-react";
+import { usePremium } from "@/lib/premium";
 import { cn } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { useLocation } from "wouter";
 
 const iconMap = {
   Coffee,
@@ -132,6 +134,8 @@ export default function Plan() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { isPremium } = usePremium();
+  const [, setLocation] = useLocation();
 
   // Load flights from API
   const { data: apiFlights, isLoading } = useQuery({
@@ -424,35 +428,37 @@ export default function Plan() {
           )}
        </div>
 
-    <div className="relative border-l border-border ml-3 space-y-8 pl-8 py-2 animate-in fade-in slide-in-from-bottom-2">
-      {activePlan.map((phase, index) => {
-        const Icon = iconMap[phase.icon as keyof typeof iconMap] || Plane;
-        const currentVariation = mealVariations[index] || 0;
-        const variationCount = phase.foodEquivalents?.length || 1;
-        
-        return (
-          <div key={index} className="relative">
-            {/* Timeline Dot */}
-            <div className={cn(
-              "absolute -left-[41px] top-0 w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center z-10",
-              index === 1 ? "border-primary text-primary shadow-[0_0_10px_rgba(46,204,113,0.3)]" : "text-muted-foreground"
-            )}>
-              <Icon size={14} />
-            </div>
+    {/* Meal Plan Timeline - Premium Feature */}
+    {isPremium ? (
+      <div className="relative border-l border-border ml-3 space-y-8 pl-8 py-2 animate-in fade-in slide-in-from-bottom-2">
+        {activePlan.map((phase, index) => {
+          const Icon = iconMap[phase.icon as keyof typeof iconMap] || Plane;
+          const currentVariation = mealVariations[index] || 0;
+          const variationCount = phase.foodEquivalents?.length || 1;
+          
+          return (
+            <div key={index} className="relative">
+              {/* Timeline Dot */}
+              <div className={cn(
+                "absolute -left-[41px] top-0 w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center z-10",
+                index === 1 ? "border-primary text-primary shadow-[0_0_10px_rgba(46,204,113,0.3)]" : "text-muted-foreground"
+              )}>
+                <Icon size={14} />
+              </div>
 
-            {/* Content Card */}
-            <div className={cn(
-              "cockpit-panel p-4 transition-all duration-300 group",
-              index === 1 ? "border-primary/40 ring-1 ring-primary/20" : "opacity-80 hover:opacity-100"
-            )}>
-              <div className="flex justify-between items-start mb-2">
-                <h3 className={cn(
-                  "text-sm font-bold uppercase tracking-wider",
-                  index === 1 ? "text-primary" : "text-foreground"
-                )}>
-                  {phase.phase}
-                </h3>
-                <span className="font-mono text-xs text-muted-foreground bg-muted/20 px-1.5 py-0.5 rounded">
+              {/* Content Card */}
+              <div className={cn(
+                "cockpit-panel p-4 transition-all duration-300 group",
+                index === 1 ? "border-primary/40 ring-1 ring-primary/20" : "opacity-80 hover:opacity-100"
+              )}>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className={cn(
+                    "text-sm font-bold uppercase tracking-wider",
+                    index === 1 ? "text-primary" : "text-foreground"
+                  )}>
+                    {phase.phase}
+                  </h3>
+                  <span className="font-mono text-xs text-muted-foreground bg-muted/20 px-1.5 py-0.5 rounded">
                   {phase.time}
                 </span>
               </div>
@@ -509,8 +515,43 @@ export default function Plan() {
             </div>
           </div>
         );
-      })}
-    </div>
+        })}
+      </div>
+    ) : (
+      <div className="relative mt-4">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0e1a]/80 to-[#0a0e1a] z-10 flex flex-col items-center justify-center p-6 rounded-lg">
+          <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 p-4 rounded-full mb-4 border border-amber-500/30">
+            <Lock className="w-8 h-8 text-amber-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">Premium Feature</h3>
+          <p className="text-cyan-400/70 text-sm text-center mb-4">
+            Personalized Nutrition Plans are available with FlightFuel Premium
+          </p>
+          <button
+            onClick={() => setLocation('/upgrade')}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all"
+            data-testid="button-upgrade-nutrition"
+          >
+            <Sparkles className="w-4 h-4" />
+            Upgrade to Premium
+          </button>
+        </div>
+        <div className="blur-sm opacity-50 pointer-events-none border-l border-border ml-3 space-y-6 pl-8 py-2">
+          {[1, 2, 3, 4].map((_, index) => (
+            <div key={index} className="relative">
+              <div className="absolute -left-[41px] top-0 w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center">
+                <Utensils size={14} className="text-muted-foreground" />
+              </div>
+              <div className="cockpit-panel p-4">
+                <div className="h-4 w-24 bg-muted/30 rounded mb-2 animate-pulse" />
+                <div className="h-24 bg-muted/20 rounded mb-2 animate-pulse" />
+                <div className="h-3 w-full bg-muted/20 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
     </div>
   );
 

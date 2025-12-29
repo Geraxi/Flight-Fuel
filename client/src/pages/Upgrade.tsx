@@ -175,6 +175,14 @@ export default function Upgrade() {
         {loading ? 'Processing...' : 'Start Premium'}
       </button>
 
+      <button
+        onClick={() => setLocation('/')}
+        className="w-full py-3 mt-3 text-cyan-400/70 hover:text-cyan-400 text-sm font-medium transition-colors"
+        data-testid="button-continue-free"
+      >
+        Continue with limited features
+      </button>
+
       <p className="text-center text-cyan-400/50 text-xs mt-4">
         Cancel anytime. Secure payment powered by Stripe.
       </p>

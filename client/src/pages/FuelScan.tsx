@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, ScanLine, X, Check, Plus, Image as ImageIcon, Utensils, Flame, Target, TrendingDown, Edit2, Trash2 } from "lucide-react";
+import { Camera, ScanLine, X, Check, Plus, Image as ImageIcon, Utensils, Flame, Target, TrendingDown, Edit2, Trash2, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CockpitCard, InstrumentDisplay, Annunciator } from "@/components/ui/CockpitCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,6 +8,8 @@ import { useAuth } from "@/lib/auth";
 import { calculateCalorieTargets, calculateDailyProgress, getCalorieStatus } from "@/lib/calories";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { usePremium } from "@/lib/premium";
+import { useLocation } from "wouter";
 import type { NutritionLog } from "@shared/schema";
 
 type ViewMode = "dashboard" | "camera" | "manual" | "result";
@@ -38,6 +40,8 @@ export default function FuelScan() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+  const { isPremium } = usePremium();
+  const [, setLocation] = useLocation();
   
   const today = new Date().toISOString().split("T")[0];
   
@@ -593,15 +597,31 @@ export default function FuelScan() {
       </CockpitCard>
 
       <div className="grid grid-cols-2 gap-3">
-        <Button 
-          className="h-16 mfd-button flex-col gap-1"
-          variant="outline"
-          onClick={() => setViewMode("camera")}
-          data-testid="button-scan-food"
-        >
-          <Camera className="w-5 h-5" />
-          <span>SCAN FOOD</span>
-        </Button>
+        {isPremium ? (
+          <Button 
+            className="h-16 mfd-button flex-col gap-1"
+            variant="outline"
+            onClick={() => setViewMode("camera")}
+            data-testid="button-scan-food"
+          >
+            <Camera className="w-5 h-5" />
+            <span>SCAN FOOD</span>
+          </Button>
+        ) : (
+          <Button 
+            className="h-16 mfd-button flex-col gap-1 relative overflow-hidden"
+            variant="outline"
+            onClick={() => setLocation("/upgrade")}
+            data-testid="button-scan-food-locked"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/10" />
+            <Lock className="w-5 h-5 text-amber-400" />
+            <span className="text-amber-400">SCAN FOOD</span>
+            <span className="absolute top-1 right-1 flex items-center gap-0.5 text-[8px] text-amber-400 bg-amber-500/20 px-1 rounded">
+              <Sparkles className="w-2 h-2" /> PRO
+            </span>
+          </Button>
+        )}
         <Button 
           className="h-16 mfd-button flex-col gap-1"
           variant="outline"

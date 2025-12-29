@@ -1,12 +1,12 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { SignIn, SignUp, SignedIn, SignedOut, useClerk, RedirectToSignIn } from "@clerk/clerk-react";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { PremiumProvider } from "@/lib/premium";
+import { PremiumProvider, usePremium } from "@/lib/premium";
 import { setAuthTokenGetter } from "@/lib/api";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import BottomNav from "@/components/layout/BottomNav";
 import FlightDeck from "@/pages/FlightDeck";
 import Plan from "@/pages/Plan";
@@ -21,10 +21,28 @@ import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
   const { hasProfile, profileLoading, refetchProfile, getToken } = useAuth();
+  const { isPremium } = usePremium();
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     setAuthTokenGetter(getToken);
   }, [getToken]);
+
+  const handleOnboardingComplete = () => {
+    refetchProfile();
+    if (!isPremium) {
+      setShowPaywall(true);
+    }
+  };
+
+  // Redirect to upgrade page after onboarding for non-premium users
+  useEffect(() => {
+    if (showPaywall && !isPremium && hasProfile) {
+      setShowPaywall(false);
+      setLocation('/upgrade');
+    }
+  }, [showPaywall, isPremium, hasProfile, setLocation]);
 
   if (profileLoading) {
     return (
@@ -35,7 +53,7 @@ function AuthenticatedApp() {
   }
 
   if (!hasProfile) {
-    return <OnboardingPage onComplete={refetchProfile} />;
+    return <OnboardingPage onComplete={handleOnboardingComplete} />;
   }
 
   return (

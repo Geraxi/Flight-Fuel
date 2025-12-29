@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, FileText, Edit2, Play, Info } from "lucide-react";
+import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, FileText, Edit2, Play, Info, Lock, Sparkles } from "lucide-react";
+import { usePremium } from "@/lib/premium";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +57,8 @@ type WorkoutSession = {
 export default function Training() {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const { isPremium } = usePremium();
+  const [, setLocation] = useLocation();
 
   const [prefs, setPrefs] = useState<TrainingPreferences>({
     experience: "Intermediate",
@@ -303,6 +307,55 @@ export default function Training() {
           description: `Workout for Day ${newPlan[sessionIndex].day} saved successfully.`
       });
   };
+
+  if (!isPremium) {
+    return (
+      <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <header className="mb-6 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10">
+            <Dumbbell className="text-primary w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Training Brief</h1>
+            <p className="text-xs text-muted-foreground font-mono">PHYSICAL READINESS</p>
+          </div>
+        </header>
+
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0e1a]/80 to-[#0a0e1a] z-10 flex flex-col items-center justify-center p-6 rounded-lg">
+            <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 p-4 rounded-full mb-4 border border-amber-500/30">
+              <Lock className="w-8 h-8 text-amber-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Premium Feature</h3>
+            <p className="text-cyan-400/70 text-sm text-center mb-4">
+              Custom Training Programs are available with FlightFuel Premium
+            </p>
+            <button
+              onClick={() => setLocation('/upgrade')}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all"
+              data-testid="button-upgrade-training"
+            >
+              <Sparkles className="w-4 h-4" />
+              Upgrade to Premium
+            </button>
+          </div>
+          <div className="blur-sm opacity-50 pointer-events-none">
+            <CockpitCard title="Mission Parameters">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-10 bg-muted/20 rounded animate-pulse" />
+                  <div className="h-10 bg-muted/20 rounded animate-pulse" />
+                </div>
+                <div className="h-8 bg-muted/20 rounded animate-pulse" />
+                <div className="h-8 bg-muted/20 rounded animate-pulse" />
+                <div className="h-10 bg-primary/20 rounded animate-pulse" />
+              </div>
+            </CockpitCard>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
