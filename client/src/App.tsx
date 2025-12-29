@@ -2,7 +2,7 @@ import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
-import { SignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
+import { SignIn, SignUp, SignedIn, SignedOut, useClerk, RedirectToSignIn } from "@clerk/clerk-react";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { setAuthTokenGetter } from "@/lib/api";
 import { useEffect } from "react";
@@ -60,25 +60,23 @@ function AuthenticatedApp() {
 }
 
 function Router() {
+  const { loaded } = useClerk();
+
+  if (!loaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] via-[#1a1f35] to-[#0f1419] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-cyan-400 text-lg mb-2">FlightFuel</div>
+          <div className="text-cyan-400/60 text-sm">Initializing...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <SignedOut>
-        <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] via-[#1a1f35] to-[#0f1419] flex items-center justify-center p-4">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-white mb-2">FlightFuel</h1>
-              <p className="text-cyan-400/80 text-sm">Pilot Performance Platform</p>
-            </div>
-            <SignIn 
-              appearance={{
-                elements: {
-                  rootBox: "mx-auto",
-                  card: "bg-[#1a1f35]/90 border border-cyan-500/20",
-                }
-              }}
-            />
-          </div>
-        </div>
+        <RedirectToSignIn />
       </SignedOut>
       <SignedIn>
         <AuthProvider>
