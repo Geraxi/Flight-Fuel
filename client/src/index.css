@@ -6,46 +6,49 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: hsl(220 14% 10%); /* Deep Cockpit Grey */
-  --color-foreground: hsl(210 20% 90%);
+  --color-background: hsl(222 18% 8%);
+  --color-foreground: hsl(180 20% 92%);
 
-  --color-card: hsl(220 14% 13%);
-  --color-card-foreground: hsl(210 20% 90%);
+  --color-card: hsl(222 18% 11%);
+  --color-card-foreground: hsl(180 20% 92%);
 
-  --color-popover: hsl(220 14% 13%);
-  --color-popover-foreground: hsl(210 20% 90%);
+  --color-popover: hsl(222 18% 11%);
+  --color-popover-foreground: hsl(180 20% 92%);
 
-  --color-primary: hsl(142 70% 45%); /* Avionics Green */
-  --color-primary-foreground: hsl(220 14% 10%);
+  --color-primary: hsl(142 76% 48%);
+  --color-primary-foreground: hsl(222 18% 8%);
 
-  --color-secondary: hsl(35 95% 50%); /* Amber Advisory */
-  --color-secondary-foreground: hsl(220 14% 10%);
+  --color-secondary: hsl(38 100% 50%);
+  --color-secondary-foreground: hsl(222 18% 8%);
 
-  --color-muted: hsl(220 14% 20%);
-  --color-muted-foreground: hsl(215 15% 60%);
+  --color-muted: hsl(222 18% 16%);
+  --color-muted-foreground: hsl(200 15% 55%);
 
-  --color-accent: hsl(220 14% 25%);
-  --color-accent-foreground: hsl(210 20% 90%);
+  --color-accent: hsl(222 18% 20%);
+  --color-accent-foreground: hsl(180 20% 92%);
 
-  --color-destructive: hsl(0 84% 60%);
-  --color-destructive-foreground: hsl(210 20% 98%);
+  --color-destructive: hsl(0 80% 55%);
+  --color-destructive-foreground: hsl(180 20% 98%);
 
-  --color-border: hsl(220 14% 22%);
-  --color-input: hsl(220 14% 22%);
-  --color-ring: hsl(142 70% 45%);
+  --color-border: hsl(222 18% 18%);
+  --color-input: hsl(222 18% 18%);
+  --color-ring: hsl(142 76% 48%);
 
-  --color-chart-1: hsl(142 70% 45%);
-  --color-chart-2: hsl(35 95% 50%);
-  --color-chart-3: hsl(199 89% 48%);
+  --color-chart-1: hsl(142 76% 48%);
+  --color-chart-2: hsl(38 100% 50%);
+  --color-chart-3: hsl(195 100% 50%);
   --color-chart-4: hsl(280 65% 60%);
   --color-chart-5: hsl(340 75% 55%);
 
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --color-cyan: hsl(195 100% 50%);
+  --color-magenta: hsl(300 80% 55%);
 
-  --font-sans: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", monospace;
 }
 
 @layer base {
@@ -54,55 +57,318 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
+    background-image: 
+      radial-gradient(ellipse at top, hsla(222, 18%, 12%, 1) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, hsla(195, 30%, 8%, 1) 0%, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
 @layer utilities {
   .cockpit-panel {
-    @apply bg-card border border-border shadow-sm relative overflow-hidden rounded-xl;
+    @apply relative overflow-hidden;
+    background: linear-gradient(145deg, hsl(222 18% 13%), hsl(222 18% 9%));
+    border: 1px solid hsl(222 18% 22%);
+    border-radius: 12px;
+    box-shadow: 
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.03),
+      inset 0 -1px 0 hsla(0, 0%, 0%, 0.2),
+      0 4px 16px hsla(0, 0%, 0%, 0.4),
+      0 1px 3px hsla(0, 0%, 0%, 0.3);
+  }
+  
+  .cockpit-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsla(195, 100%, 50%, 0.15), transparent);
   }
   
   .cockpit-header {
-    @apply bg-muted/30 border-b border-border px-4 py-2 flex items-center justify-between;
+    @apply px-4 py-2.5 flex items-center justify-between;
+    background: linear-gradient(180deg, hsla(222, 18%, 18%, 0.6), hsla(222, 18%, 14%, 0.4));
+    border-bottom: 1px solid hsl(222 18% 20%);
   }
   
   .cockpit-label {
-    @apply font-mono text-xs text-muted-foreground uppercase tracking-wider;
+    @apply font-mono text-[10px] uppercase tracking-[0.15em] font-medium;
+    color: hsl(195 60% 65%);
+    text-shadow: 0 0 8px hsla(195, 100%, 50%, 0.3);
   }
   
   .cockpit-value {
-    @apply font-mono text-foreground tracking-tight;
+    @apply font-mono tracking-tight;
+    color: hsl(142 76% 55%);
+    text-shadow: 0 0 12px hsla(142, 76%, 48%, 0.4);
+  }
+
+  .instrument-bezel {
+    @apply relative;
+    background: linear-gradient(145deg, hsl(222 18% 16%), hsl(222 18% 10%));
+    border: 2px solid hsl(222 18% 24%);
+    border-radius: 14px;
+    box-shadow: 
+      inset 0 2px 4px hsla(0, 0%, 0%, 0.3),
+      inset 0 -1px 2px hsla(0, 0%, 100%, 0.02),
+      0 4px 12px hsla(0, 0%, 0%, 0.5),
+      0 0 0 1px hsla(0, 0%, 0%, 0.3);
+  }
+
+  .instrument-bezel::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 10px;
+    border: 1px solid hsl(222 18% 28%);
+    pointer-events: none;
+  }
+
+  .pfd-display {
+    @apply font-mono;
+    background: linear-gradient(180deg, hsl(222 25% 6%), hsl(222 20% 8%));
+    border: 1px solid hsl(222 18% 15%);
+    border-radius: 8px;
+    box-shadow: 
+      inset 0 1px 3px hsla(0, 0%, 0%, 0.5),
+      0 0 0 1px hsla(0, 0%, 0%, 0.2);
+  }
+
+  .lcd-text {
+    @apply font-mono font-bold;
+    color: hsl(142 76% 55%);
+    text-shadow: 
+      0 0 6px hsla(142, 76%, 48%, 0.6),
+      0 0 12px hsla(142, 76%, 48%, 0.3);
+  }
+
+  .lcd-text-amber {
+    @apply font-mono font-bold;
+    color: hsl(38 100% 55%);
+    text-shadow: 
+      0 0 6px hsla(38, 100%, 50%, 0.6),
+      0 0 12px hsla(38, 100%, 50%, 0.3);
+  }
+
+  .lcd-text-cyan {
+    @apply font-mono font-bold;
+    color: hsl(195 100% 55%);
+    text-shadow: 
+      0 0 6px hsla(195, 100%, 50%, 0.6),
+      0 0 12px hsla(195, 100%, 50%, 0.3);
+  }
+
+  .lcd-text-white {
+    @apply font-mono font-bold;
+    color: hsl(180 20% 92%);
+    text-shadow: 
+      0 0 6px hsla(180, 20%, 92%, 0.5),
+      0 0 12px hsla(180, 20%, 92%, 0.2);
+  }
+
+  .mfd-button {
+    @apply relative font-mono text-[10px] uppercase tracking-wider px-3 py-2 transition-all duration-150;
+    background: linear-gradient(180deg, hsl(222 18% 18%), hsl(222 18% 12%));
+    border: 1px solid hsl(222 18% 26%);
+    border-radius: 6px;
+    color: hsl(200 15% 60%);
+    box-shadow: 
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.05),
+      0 2px 4px hsla(0, 0%, 0%, 0.3);
+  }
+
+  .mfd-button:hover {
+    background: linear-gradient(180deg, hsl(222 18% 22%), hsl(222 18% 15%));
+    border-color: hsl(222 18% 32%);
+    color: hsl(180 20% 80%);
+  }
+
+  .mfd-button:active {
+    background: linear-gradient(180deg, hsl(222 18% 14%), hsl(222 18% 18%));
+    box-shadow: inset 0 1px 3px hsla(0, 0%, 0%, 0.4);
+  }
+
+  .mfd-button.active {
+    background: linear-gradient(180deg, hsl(222 18% 20%), hsl(222 18% 14%));
+    border-color: hsl(142 76% 40%);
+    color: hsl(142 76% 55%);
+    box-shadow: 
+      inset 0 0 8px hsla(142, 76%, 48%, 0.15),
+      0 0 8px hsla(142, 76%, 48%, 0.2);
+  }
+
+  .annunciator {
+    @apply font-mono text-[10px] uppercase tracking-wider px-2 py-1 rounded;
+    background: hsla(0, 0%, 0%, 0.4);
+    border: 1px solid hsla(0, 0%, 100%, 0.1);
+  }
+
+  .annunciator.green {
+    color: hsl(142 76% 55%);
+    background: hsla(142, 76%, 48%, 0.1);
+    border-color: hsla(142, 76%, 48%, 0.3);
+    text-shadow: 0 0 6px hsla(142, 76%, 48%, 0.4);
+  }
+
+  .annunciator.amber {
+    color: hsl(38 100% 55%);
+    background: hsla(38, 100%, 50%, 0.1);
+    border-color: hsla(38, 100%, 50%, 0.3);
+    text-shadow: 0 0 6px hsla(38, 100%, 50%, 0.4);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  .annunciator.red {
+    color: hsl(0 80% 60%);
+    background: hsla(0, 80%, 55%, 0.15);
+    border-color: hsla(0, 80%, 55%, 0.4);
+    text-shadow: 0 0 6px hsla(0, 80%, 55%, 0.5);
+    animation: blink 0.5s ease-in-out infinite;
+  }
+
+  .annunciator.cyan {
+    color: hsl(195 100% 55%);
+    background: hsla(195, 100%, 50%, 0.1);
+    border-color: hsla(195, 100%, 50%, 0.3);
+    text-shadow: 0 0 6px hsla(195, 100%, 50%, 0.4);
+  }
+
+  .status-led {
+    @apply w-2 h-2 rounded-full;
+    box-shadow: 
+      0 0 4px currentColor,
+      0 0 8px currentColor;
+  }
+
+  .status-led.green {
+    background: hsl(142 76% 55%);
+    color: hsl(142 76% 48%);
+  }
+
+  .status-led.amber {
+    background: hsl(38 100% 55%);
+    color: hsl(38 100% 50%);
+    animation: pulse-glow-amber 2s ease-in-out infinite;
+  }
+
+  .status-led.red {
+    background: hsl(0 80% 55%);
+    color: hsl(0 80% 55%);
+    animation: pulse-glow-red 0.75s ease-in-out infinite;
+  }
+
+  .gauge-ring {
+    stroke: hsl(222 18% 25%);
+    stroke-width: 8;
+    fill: none;
+  }
+
+  .gauge-fill {
+    stroke-width: 8;
+    fill: none;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 4px currentColor);
   }
 
   .text-shadow-glow {
-    text-shadow: 0 0 10px hsla(142, 70%, 45%, 0.5);
+    text-shadow: 
+      0 0 8px hsla(142, 76%, 48%, 0.5),
+      0 0 16px hsla(142, 76%, 48%, 0.25);
   }
   
   .text-shadow-amber {
-    text-shadow: 0 0 10px hsla(35, 95%, 50%, 0.5);
+    text-shadow: 
+      0 0 8px hsla(38, 100%, 50%, 0.5),
+      0 0 16px hsla(38, 100%, 50%, 0.25);
   }
 
-  /* Scanline effect */
+  .text-shadow-cyan {
+    text-shadow: 
+      0 0 8px hsla(195, 100%, 50%, 0.5),
+      0 0 16px hsla(195, 100%, 50%, 0.25);
+  }
+
   .scanlines {
-    background: linear-gradient(
-      to bottom,
-      rgba(255,255,255,0),
-      rgba(255,255,255,0) 50%,
-      rgba(0,0,0,0.1) 50%,
-      rgba(0,0,0,0.1)
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsla(0, 0%, 0%, 0.03) 2px,
+      hsla(0, 0%, 0%, 0.03) 4px
     );
-    background-size: 100% 4px;
+    pointer-events: none;
+  }
+
+  .crt-curve {
+    border-radius: 16px;
+    box-shadow: 
+      inset 0 0 60px hsla(0, 0%, 0%, 0.3),
+      inset 0 0 20px hsla(0, 0%, 0%, 0.2);
+  }
+
+  .glass-reflection {
+    position: relative;
+  }
+
+  .glass-reflection::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(
+      180deg,
+      hsla(195, 100%, 80%, 0.03) 0%,
+      transparent 100%
+    );
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .nav-button {
+    @apply relative flex flex-col items-center justify-center gap-0.5 py-2 px-3 transition-all duration-200;
+  }
+
+  .nav-button::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 8px;
+    background: transparent;
+    transition: all 0.2s;
+  }
+
+  .nav-button.active::before {
+    background: linear-gradient(180deg, hsla(142, 76%, 48%, 0.15), hsla(142, 76%, 48%, 0.05));
+    border: 1px solid hsla(142, 76%, 48%, 0.3);
+    box-shadow: 0 0 12px hsla(142, 76%, 48%, 0.2);
   }
 }
 
-@keyframes scan {
-  0%, 100% { top: 0%; }
-  50% { top: 100%; }
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-@keyframes scan-vertical {
-  0%, 100% { left: 0%; }
-  50% { left: 100%; }
+@keyframes pulse-glow-amber {
+  0%, 100% { 
+    box-shadow: 0 0 4px hsl(38 100% 50%), 0 0 8px hsl(38 100% 50%);
+  }
+  50% { 
+    box-shadow: 0 0 8px hsl(38 100% 50%), 0 0 16px hsl(38 100% 50%);
+  }
+}
+
+@keyframes pulse-glow-red {
+  0%, 100% { 
+    box-shadow: 0 0 4px hsl(0 80% 55%), 0 0 8px hsl(0 80% 55%);
+  }
+  50% { 
+    box-shadow: 0 0 10px hsl(0 80% 55%), 0 0 20px hsl(0 80% 55%);
+  }
 }
 
 @keyframes scan-down {

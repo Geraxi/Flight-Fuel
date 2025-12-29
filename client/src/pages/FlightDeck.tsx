@@ -1,6 +1,6 @@
-import { CockpitCard } from "@/components/ui/CockpitCard";
+import { CockpitCard, InstrumentDisplay, Annunciator, GaugeRing } from "@/components/ui/CockpitCard";
 import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES, SUPPLEMENT_STACK } from "@/lib/mockData";
-import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Droplets, Info, Zap, Heart, Shield, Brain, Dumbbell, Moon } from "lucide-react";
+import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Droplets, Zap, Heart, Shield, Brain, Dumbbell, Moon, Activity } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
@@ -40,57 +40,86 @@ export default function FlightDeck() {
     }
   };
 
+  const completedCount = checklist.filter(item => item.status === "complete").length;
+  const totalCount = checklist.length;
+  const checklistProgress = Math.round((completedCount / totalCount) * 100);
+
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-xl font-bold tracking-widest text-foreground">FLIGHT DECK</h1>
-          <p className="text-xs text-muted-foreground font-mono">SYS.READY // {new Date().toLocaleDateString()}</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+              <Plane className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-[0.2em] text-foreground font-mono">FLIGHT DECK</h1>
+              <p className="text-[10px] text-muted-foreground font-mono tracking-wider">
+                SYS.READY <span className="text-primary">●</span> {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}
+              </p>
+            </div>
+          </div>
         </div>
         <Link href="/profile">
-          <div className="h-8 w-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10 hover:bg-primary/20 cursor-pointer transition-colors">
-            <Settings className="text-primary w-4 h-4" />
+          <div className="mfd-button cursor-pointer" data-testid="button-settings">
+            <Settings className="w-4 h-4" />
           </div>
         </Link>
       </header>
 
-      {/* Main Status Card */}
-      <CockpitCard title="Today's Flight Plan" className="border-primary/30 shadow-[0_0_20px_rgba(46,204,113,0.1)]">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="cockpit-label mb-1">Duty Start</div>
-            <div className="text-2xl font-mono text-primary text-shadow-glow">
-              {CURRENT_DUTY.dutyStart}
-            </div>
+      <CockpitCard title="Primary Flight Display" variant="instrument" status="cyan">
+        <div className="grid grid-cols-3 gap-4">
+          <InstrumentDisplay 
+            label="Duty Start" 
+            value={CURRENT_DUTY.dutyStart}
+            size="default"
+          />
+          <div className="flex flex-col items-center justify-center">
+            <GaugeRing 
+              value={checklistProgress} 
+              max={100} 
+              size={70}
+              label="Ready"
+              status={checklistProgress === 100 ? "normal" : checklistProgress > 50 ? "amber" : "warning"}
+            />
           </div>
-          <div>
-            <div className="cockpit-label mb-1">Mode</div>
-            <div className="text-xl font-mono text-foreground">
-              {userGoal.toUpperCase()}
-            </div>
-          </div>
-          
-          <div className="col-span-2 h-px bg-border/50 my-2" />
-          
-          <div className="flex justify-between items-center">
+          <InstrumentDisplay 
+            label="Mode" 
+            value={userGoal.toUpperCase().slice(0, 8)}
+            size="default"
+          />
+        </div>
+        
+        <div className="h-px bg-border/50 my-4" />
+        
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-muted-foreground" />
             <span className="cockpit-label">Conditions</span>
-            <span className="font-mono text-sm text-secondary">{CURRENT_DUTY.conditions.toUpperCase()}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="cockpit-label">Type</span>
-            <span className="font-mono text-sm">{CURRENT_DUTY.dutyType.toUpperCase()}</span>
+          <Annunciator status={CURRENT_DUTY.conditions === "ISA" ? "green" : "amber"}>
+            {CURRENT_DUTY.conditions.toUpperCase()}
+          </Annunciator>
+        </div>
+        
+        <div className="flex justify-between items-center gap-4 mt-3">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span className="cockpit-label">Duty Type</span>
           </div>
+          <Annunciator status="cyan">
+            {CURRENT_DUTY.dutyType.toUpperCase()}
+          </Annunciator>
         </div>
       </CockpitCard>
 
-      {/* Advisories */}
       {ADVISORIES.length > 0 && (
-        <CockpitCard title="Advisories" status="amber">
+        <CockpitCard title="Crew Alerting System" status="amber" variant="default">
           <div className="space-y-4">
             {ADVISORIES.map((adv) => (
               <div key={adv.id} className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-3">
-                  {getIcon(adv.icon)}
+                  <div className="status-led amber" />
                   <div className="flex justify-between w-full items-center">
                      <span className="font-mono text-sm text-secondary">{adv.message}</span>
                      {adv.value !== undefined && (
@@ -99,7 +128,7 @@ export default function FlightDeck() {
                   </div>
                 </div>
                 {adv.value !== undefined && (
-                   <div className="pl-7">
+                   <div className="pl-6">
                       <Progress value={(adv.value / (adv.maxValue || 100)) * 100} className="h-1.5 bg-secondary/20 [&>div]:bg-secondary" />
                    </div>
                 )}
@@ -109,22 +138,30 @@ export default function FlightDeck() {
         </CockpitCard>
       )}
 
-      {/* Checklist Grid */}
-      <div className="grid grid-cols-1 gap-4">
-        <h3 className="cockpit-label mt-2">PRE-FLIGHT CHECKLIST</h3>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="cockpit-label">PRE-FLIGHT CHECKLIST</h3>
+          <span className="font-mono text-xs text-primary">{completedCount}/{totalCount}</span>
+        </div>
+        
         {checklist.map((item) => (
           <div 
             key={item.id}
             onClick={() => toggleChecklist(item.id)}
-            className="group flex items-center justify-between p-3 bg-card border border-border rounded-xl hover:border-primary/50 transition-colors cursor-pointer select-none"
+            data-testid={`checklist-item-${item.id}`}
+            className="group flex items-center justify-between p-3 instrument-bezel hover:border-primary/50 transition-all cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
               {item.status === "complete" ? (
-                <CheckCircle2 className="w-5 h-5 text-primary" />
+                <div className="w-5 h-5 rounded-full bg-primary/20 border border-primary flex items-center justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                </div>
               ) : (
-                <Circle className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="w-5 h-5 rounded-full border border-muted-foreground/50 group-hover:border-primary/50 transition-colors" />
               )}
-              <span className="font-medium text-sm">{item.label}</span>
+              <span className={`font-medium text-sm transition-colors ${item.status === "complete" ? "text-primary" : "text-foreground"}`}>
+                {item.label}
+              </span>
             </div>
             <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
               {item.value}
@@ -133,22 +170,21 @@ export default function FlightDeck() {
         ))}
       </div>
 
-      {/* Supplement Protocol */}
-      <CockpitCard title="Supplement Protocol">
+      <CockpitCard title="Supplement Protocol" variant="default">
         <div className="space-y-3">
           {SUPPLEMENT_STACK.map((supp) => (
-            <div key={supp.id} className="flex items-center justify-between border-b border-border/50 last:border-0 pb-2 last:pb-0">
+            <div key={supp.id} className="flex items-center justify-between border-b border-border/30 last:border-0 pb-3 last:pb-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-lg pfd-display flex items-center justify-center">
                    {getSupplementIcon(supp.type)}
                 </div>
                 <div>
                   <div className="font-medium text-sm">{supp.name}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{supp.type.toUpperCase()}</div>
+                  <div className="text-[10px] text-muted-foreground font-mono tracking-wider">{supp.type.toUpperCase()}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-mono text-sm text-primary">{supp.dose}</div>
+                <div className="font-mono text-sm lcd-text">{supp.dose}</div>
                 <div className="text-[10px] text-muted-foreground font-mono uppercase">{supp.timing}</div>
               </div>
             </div>
