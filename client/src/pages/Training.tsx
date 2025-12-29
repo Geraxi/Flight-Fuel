@@ -8,7 +8,7 @@ import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, Fil
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { EXERCISE_DATABASE, ALTERNATIVES, getExercisesByCategory, shuffleArray, type ExerciseDef } from "@/lib/exercises";
+import { EXERCISE_DATABASE, ALTERNATIVES, getExercisesByCategory, getExercisesByMuscleGroup, getWarmupExercises, getCoreExercises, getCardioFinishers, filterByEquipment, shuffleArray, type ExerciseDef, type EquipmentFilter } from "@/lib/exercises";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +64,27 @@ export default function Training() {
   const [swappedExercises, setSwappedExercises] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
+  const createExerciseLog = (ex: ExerciseDef): ExerciseLog => {
+    const isCardio = ex.isCardio || false;
+    const numSets = isCardio ? 1 : (parseInt(ex.sets.split('-')[0]) || 3);
+    const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
+      reps: "",
+      weight: "",
+      completed: false
+    }));
+    return {
+      name: ex.name,
+      targetSets: ex.sets,
+      targetReps: ex.reps,
+      sets,
+      rest: ex.rest,
+      completed: false,
+      isCardio,
+      cardioLog: isCardio ? { totalDistance: "", totalTime: "", avgPace: "" } : undefined,
+      originalDef: ex
+    };
+  };
+
   const generatePlan = () => {
     const plan: WorkoutSession[] = [];
     const days = prefs.daysPerWeek;
@@ -71,30 +92,30 @@ export default function Training() {
     
     const workoutSplits = {
       3: [
-        { name: "Push Day", categories: ["push"], exerciseCount: 4 },
-        { name: "Pull Day", categories: ["pull"], exerciseCount: 4 },
-        { name: "Leg Day", categories: ["legs"], exerciseCount: 4 },
+        { name: "Push Day", type: "push" },
+        { name: "Pull Day", type: "pull" },
+        { name: "Leg Day", type: "legs" },
       ],
       4: [
-        { name: "Upper A", categories: ["push", "pull"], exerciseCount: 5 },
-        { name: "Lower A", categories: ["legs"], exerciseCount: 4 },
-        { name: "Upper B", categories: ["push", "pull"], exerciseCount: 5 },
-        { name: "Lower B", categories: ["legs"], exerciseCount: 4 },
+        { name: "Upper A", type: "upper" },
+        { name: "Lower A", type: "legs" },
+        { name: "Upper B", type: "upper" },
+        { name: "Lower B", type: "legs" },
       ],
       5: [
-        { name: "Push Day", categories: ["push"], exerciseCount: 4 },
-        { name: "Pull Day", categories: ["pull"], exerciseCount: 4 },
-        { name: "Leg Day", categories: ["legs"], exerciseCount: 4 },
-        { name: "Upper Body", categories: ["push", "pull"], exerciseCount: 5 },
-        { name: "Cardio + Core", categories: ["cardio", "core"], exerciseCount: 4 },
+        { name: "Push Day", type: "push" },
+        { name: "Pull Day", type: "pull" },
+        { name: "Leg Day", type: "legs" },
+        { name: "Upper Body", type: "upper" },
+        { name: "Cardio + Core", type: "conditioning" },
       ],
       6: [
-        { name: "Push A", categories: ["push"], exerciseCount: 4 },
-        { name: "Pull A", categories: ["pull"], exerciseCount: 4 },
-        { name: "Legs A", categories: ["legs"], exerciseCount: 4 },
-        { name: "Push B", categories: ["push"], exerciseCount: 4 },
-        { name: "Pull B", categories: ["pull"], exerciseCount: 4 },
-        { name: "Legs B", categories: ["legs"], exerciseCount: 4 },
+        { name: "Push A", type: "push" },
+        { name: "Pull A", type: "pull" },
+        { name: "Legs A", type: "legs" },
+        { name: "Push B", type: "push" },
+        { name: "Pull B", type: "pull" },
+        { name: "Legs B", type: "legs" },
       ],
     };
     
@@ -103,80 +124,92 @@ export default function Training() {
     for (let i = 0; i < days; i++) {
       const template = templates[i % templates.length];
       let sessionType = template.name;
+      let workoutType = template.type;
       
       if (prefs.goal === "Lose Fat" && i % 2 !== 0) {
         sessionType = "Cardio + Conditioning";
+        workoutType = "conditioning";
       }
       if (prefs.goal === "Maintenance" && i === days - 1) {
         sessionType = "Recovery + Mobility";
+        workoutType = "recovery";
       }
       
-      const exercisePool: ExerciseDef[] = [];
+      const exercises: ExerciseLog[] = [];
+      const equipment = prefs.equipment as EquipmentFilter;
+      const usedNames = new Set<string>();
       
-      if (sessionType === "Cardio + Conditioning") {
-        exercisePool.push(...getExercisesByCategory("cardio"));
-        exercisePool.push(...getExercisesByCategory("core"));
-      } else if (sessionType === "Recovery + Mobility") {
-        exercisePool.push(...getExercisesByCategory("mobility"));
-        exercisePool.push(...getExercisesByCategory("core"));
-      } else {
-        template.categories.forEach(cat => {
-          exercisePool.push(...getExercisesByCategory(cat));
+      const addExercises = (pool: ExerciseDef[], count: number) => {
+        const filtered = filterByEquipment(pool, equipment).filter(ex => !usedNames.has(ex.name));
+        const shuffled = shuffleArray(filtered, seed + i + usedNames.size);
+        shuffled.slice(0, count).forEach(ex => {
+          usedNames.add(ex.name);
+          exercises.push(createExerciseLog(ex));
         });
+      };
+      
+      // Add warmup exercises first (2-3 exercises, fewer for conditioning)
+      if (workoutType !== "recovery") {
+        const warmupCount = workoutType === "conditioning" ? 1 : (prefs.sessionLength < 45 ? 2 : 3);
+        addExercises(getWarmupExercises(), warmupCount);
       }
       
-      const shuffled = shuffleArray(exercisePool, seed + i);
-      let exerciseCount = template.exerciseCount;
+      // Add main workout exercises based on workout type
+      if (workoutType === "push") {
+        // Push Day: 2-3 chest exercises + 2 triceps exercises
+        const chestCount = prefs.sessionLength >= 60 ? 3 : 2;
+        const tricepsCount = 2;
+        const shoulderCount = prefs.sessionLength >= 60 ? 1 : 0;
+        
+        addExercises(getExercisesByMuscleGroup("chest"), chestCount);
+        addExercises(getExercisesByMuscleGroup("triceps"), tricepsCount);
+        if (shoulderCount > 0) {
+          addExercises(getExercisesByMuscleGroup("shoulders"), shoulderCount);
+        }
+      } else if (workoutType === "pull") {
+        // Pull Day: 2-3 back exercises + 2 biceps exercises
+        const backCount = prefs.sessionLength >= 60 ? 3 : 2;
+        const bicepsCount = 2;
+        
+        addExercises(getExercisesByMuscleGroup("back"), backCount);
+        addExercises(getExercisesByMuscleGroup("biceps"), bicepsCount);
+      } else if (workoutType === "legs") {
+        // Leg Day: 2-3 quad exercises + 2 hamstring exercises
+        const quadCount = prefs.sessionLength >= 60 ? 3 : 2;
+        const hamCount = 2;
+        const gluteCount = prefs.sessionLength >= 60 ? 1 : 0;
+        
+        addExercises(getExercisesByMuscleGroup("quads"), quadCount);
+        addExercises(getExercisesByMuscleGroup("hamstrings"), hamCount);
+        if (gluteCount > 0) {
+          addExercises(getExercisesByMuscleGroup("glutes"), gluteCount);
+        }
+      } else if (workoutType === "upper") {
+        // Upper Body Day: 2 chest + 2 back + 1 shoulder
+        addExercises(getExercisesByMuscleGroup("chest"), 2);
+        addExercises(getExercisesByMuscleGroup("back"), 2);
+        addExercises(getExercisesByMuscleGroup("shoulders"), 1);
+      } else if (workoutType === "conditioning") {
+        // Cardio day - main cardio work
+        addExercises(getCardioFinishers(), 3);
+        // Add core for conditioning day
+        addExercises(getCoreExercises(), 2);
+      } else if (workoutType === "recovery") {
+        // Mobility day
+        addExercises(getExercisesByCategory("mobility"), 4);
+      }
       
-      if (prefs.sessionLength < 45) exerciseCount = Math.min(3, exerciseCount);
-      else if (prefs.sessionLength > 60) exerciseCount = Math.min(exerciseCount + 2, shuffled.length);
+      // Add ab exercises at the end (1-2 exercises for strength days)
+      if (workoutType !== "recovery" && workoutType !== "conditioning") {
+        const coreCount = prefs.sessionLength >= 60 ? 2 : 1;
+        addExercises(getCoreExercises(), coreCount);
+      }
       
-      const selectedExercises = shuffled.slice(0, exerciseCount);
-      
-      const exercises: ExerciseLog[] = selectedExercises.map(ex => {
-        const isCardio = ex.isCardio || false;
-        const numSets = isCardio ? 1 : (parseInt(ex.sets.split('-')[0]) || 3);
-        const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
-          reps: "",
-          weight: "",
-          completed: false
-        }));
-
-        return {
-          name: ex.name,
-          targetSets: ex.sets,
-          targetReps: ex.reps,
-          sets,
-          rest: ex.rest,
-          completed: false,
-          isCardio,
-          cardioLog: isCardio ? { totalDistance: "", totalTime: "", avgPace: "" } : undefined,
-          originalDef: ex
-        };
-      });
-
-      if (prefs.sessionLength > 60 && sessionType !== "Recovery + Mobility") {
-        const mobilityExercises = shuffleArray(getExercisesByCategory("mobility"), seed + i + 100);
-        mobilityExercises.slice(0, 2).forEach(ex => {
-          const numSets = parseInt(ex.sets.split('-')[0]) || 2;
-          const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
-            reps: "",
-            weight: "",
-            completed: false
-          }));
-          
-          exercises.push({
-            name: ex.name,
-            targetSets: ex.sets,
-            targetReps: ex.reps,
-            sets,
-            rest: ex.rest,
-            completed: false,
-            isCardio: false,
-            cardioLog: undefined,
-            originalDef: ex
-          });
-        });
+      // Add cardio finisher when appropriate (for longer sessions or fat loss goal)
+      if (workoutType !== "conditioning" && workoutType !== "recovery") {
+        if (prefs.goal === "Lose Fat" || prefs.sessionLength >= 60) {
+          addExercises(getCardioFinishers(), 1);
+        }
       }
       
       plan.push({
