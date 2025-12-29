@@ -39,7 +39,8 @@ type ExerciseLog = {
   sets: SetLog[];
   rest: string;
   completed: boolean;
-  // Add reference to original def for media
+  isCardio?: boolean;
+  cardioLog?: { totalDistance: string; totalTime: string; avgPace: string };
   originalDef?: ExerciseDef;
 };
 
@@ -74,7 +75,8 @@ export default function Training() {
       if (prefs.goal === "Maintenance" && i === days - 1) type = "mobility";
       
       const exercises = MOCK_EXERCISES[type].map(ex => {
-          const numSets = parseInt(ex.sets.split('-')[0]) || 3;
+          const isCardio = ex.isCardio || false;
+          const numSets = isCardio ? 1 : (parseInt(ex.sets.split('-')[0]) || 3);
           const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
               reps: "",
               weight: "",
@@ -88,6 +90,8 @@ export default function Training() {
               sets,
               rest: ex.rest,
               completed: false,
+              isCardio,
+              cardioLog: isCardio ? { totalDistance: "", totalTime: "", avgPace: "" } : undefined,
               originalDef: ex
           };
       });
@@ -110,6 +114,8 @@ export default function Training() {
                    sets,
                    rest: ex.rest,
                    completed: false,
+                   isCardio: false,
+                   cardioLog: undefined,
                    originalDef: ex
                });
            });
@@ -156,6 +162,16 @@ export default function Training() {
       const newPlan = [...generatedPlan];
       // @ts-ignore
       newPlan[sessionIndex].exercises[exerciseIndex].sets[setIndex][field] = value;
+      setGeneratedPlan(newPlan);
+  };
+
+  const updateCardioLog = (sessionIndex: number, exerciseIndex: number, field: 'totalDistance' | 'totalTime' | 'avgPace', value: string) => {
+      if (!generatedPlan) return;
+      const newPlan = [...generatedPlan];
+      const exercise = newPlan[sessionIndex].exercises[exerciseIndex];
+      if (exercise.cardioLog) {
+          exercise.cardioLog[field] = value;
+      }
       setGeneratedPlan(newPlan);
   };
 
@@ -357,41 +373,86 @@ export default function Training() {
                           </div>
                           
                           <div className="space-y-1">
-                             <div className="grid grid-cols-[30px_1fr_1fr_1fr] gap-2 text-[9px] font-mono uppercase text-muted-foreground text-center px-1 mb-1">
-                                <div>#</div>
-                                <div>Target</div>
-                                <div>Reps</div>
-                                <div>Kg</div>
-                             </div>
-                             {ex.sets.map((set, k) => (
-                                 <div key={k} className="grid grid-cols-[30px_1fr_1fr_1fr] gap-2 items-center">
-                                    <div className="text-center text-xs font-mono text-muted-foreground/70">{k + 1}</div>
-                                    <div className="text-center text-xs font-mono text-muted-foreground/50">{ex.targetReps}</div>
-                                    
+                             {ex.isCardio ? (
+                               <>
+                                 <div className="grid grid-cols-3 gap-2 text-[9px] font-mono uppercase text-muted-foreground text-center px-1 mb-1">
+                                    <div>Total Distance</div>
+                                    <div>Total Time</div>
+                                    <div>Avg Pace</div>
+                                 </div>
+                                 <div className="grid grid-cols-3 gap-2 items-center">
                                     {session.completed ? (
-                                        <div className="text-center text-xs font-mono font-bold">{set.reps || '-'}</div>
+                                        <>
+                                          <div className="text-center text-xs font-mono font-bold">{ex.cardioLog?.totalDistance || '-'}</div>
+                                          <div className="text-center text-xs font-mono font-bold">{ex.cardioLog?.totalTime || '-'}</div>
+                                          <div className="text-center text-xs font-mono font-bold">{ex.cardioLog?.avgPace || '-'}</div>
+                                        </>
                                     ) : (
-                                        <Input 
-                                            className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
-                                            value={set.reps}
-                                            placeholder={ex.targetReps.split('-')[0]} // First number as hint
-                                            onChange={(e) => updateSet(i, j, k, 'reps', e.target.value)}
-                                        />
-                                    )}
-
-                                    {session.completed ? (
-                                        <div className="text-center text-xs font-mono font-bold">{set.weight || '-'}</div>
-                                    ) : (
-                                        <Input 
-                                            type="number"
-                                            className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
-                                            value={set.weight}
-                                            placeholder="0"
-                                            onChange={(e) => updateSet(i, j, k, 'weight', e.target.value)}
-                                        />
+                                        <>
+                                          <Input 
+                                              className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                              value={ex.cardioLog?.totalDistance || ""}
+                                              placeholder="5000m"
+                                              onChange={(e) => updateCardioLog(i, j, 'totalDistance', e.target.value)}
+                                          />
+                                          <Input 
+                                              className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                              value={ex.cardioLog?.totalTime || ""}
+                                              placeholder="20:00"
+                                              onChange={(e) => updateCardioLog(i, j, 'totalTime', e.target.value)}
+                                          />
+                                          <Input 
+                                              className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                              value={ex.cardioLog?.avgPace || ""}
+                                              placeholder="2:00/500m"
+                                              onChange={(e) => updateCardioLog(i, j, 'avgPace', e.target.value)}
+                                          />
+                                        </>
                                     )}
                                  </div>
-                             ))}
+                                 <div className="text-[10px] font-mono text-muted-foreground/50 text-center mt-2">
+                                    Target: {ex.targetSets} x {ex.targetReps} with {ex.rest} work:rest
+                                 </div>
+                               </>
+                             ) : (
+                               <>
+                                 <div className="grid grid-cols-[30px_1fr_1fr_1fr] gap-2 text-[9px] font-mono uppercase text-muted-foreground text-center px-1 mb-1">
+                                    <div>#</div>
+                                    <div>Target</div>
+                                    <div>Reps</div>
+                                    <div>Kg</div>
+                                 </div>
+                                 {ex.sets.map((set, k) => (
+                                     <div key={k} className="grid grid-cols-[30px_1fr_1fr_1fr] gap-2 items-center">
+                                        <div className="text-center text-xs font-mono text-muted-foreground/70">{k + 1}</div>
+                                        <div className="text-center text-xs font-mono text-muted-foreground/50">{ex.targetReps}</div>
+                                        
+                                        {session.completed ? (
+                                            <div className="text-center text-xs font-mono font-bold">{set.reps || '-'}</div>
+                                        ) : (
+                                            <Input 
+                                                className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                                value={set.reps}
+                                                placeholder={ex.targetReps.split('-')[0]}
+                                                onChange={(e) => updateSet(i, j, k, 'reps', e.target.value)}
+                                            />
+                                        )}
+
+                                        {session.completed ? (
+                                            <div className="text-center text-xs font-mono font-bold">{set.weight || '-'}</div>
+                                        ) : (
+                                            <Input 
+                                                type="number"
+                                                className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                                value={set.weight}
+                                                placeholder="0"
+                                                onChange={(e) => updateSet(i, j, k, 'weight', e.target.value)}
+                                            />
+                                        )}
+                                     </div>
+                                 ))}
+                               </>
+                             )}
                           </div>
                        </div>
                      );

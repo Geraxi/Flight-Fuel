@@ -20,6 +20,7 @@ export interface ExerciseDef {
   image: string;
   video?: string;
   description: string;
+  isCardio?: boolean;
 }
 
 export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
@@ -65,7 +66,8 @@ export const MOCK_EXERCISES: Record<string, ExerciseDef[]> = {
       reps: "500m", 
       rest: "1:1", 
       image: rowImg,
-      description: "Drive with legs, then swing body, then pull arms. Reverse on recovery. Maintain consistent stroke rate."
+      description: "Drive with legs, then swing body, then pull arms. Reverse on recovery. Maintain consistent stroke rate.",
+      isCardio: true
     },
     { 
       name: "Kettlebell Swings", 
