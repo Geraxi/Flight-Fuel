@@ -4,9 +4,13 @@ import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Drop
 import { Link } from "wouter";
 import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/lib/auth";
 
 export default function FlightDeck() {
   const [checklist, setChecklist] = useState(CHECKLIST_ITEMS);
+  const { profile } = useAuth();
+  
+  const userGoal = profile?.goal || "Maintain";
 
   const toggleChecklist = (id: string) => {
     setChecklist(prev => prev.map(item => 
@@ -62,7 +66,7 @@ export default function FlightDeck() {
           <div>
             <div className="cockpit-label mb-1">Mode</div>
             <div className="text-xl font-mono text-foreground">
-              {CURRENT_DUTY.mode.toUpperCase()}
+              {userGoal.toUpperCase()}
             </div>
           </div>
           

@@ -14,19 +14,45 @@ import { profileApi } from "@/lib/api";
 import { SignOutButton, UserButton } from "@clerk/clerk-react";
 
 export default function Profile() {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const { user, profile: authProfile, refetchProfile } = useAuth();
+  
   const [profile, setProfile] = useState<PilotProfile>(() => {
-    const saved = localStorage.getItem("flightfuel_profile");
-    return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
+    if (authProfile) {
+      return {
+        height: authProfile.height,
+        weight: authProfile.weight,
+        age: authProfile.age,
+        activityLevel: authProfile.activityLevel as any,
+        trainingFreq: authProfile.trainingFreq,
+        goal: authProfile.goal as any,
+        nextMedicalDate: authProfile.nextMedicalDate || undefined,
+        restingHeartRate: authProfile.restingHeartRate || undefined,
+      };
+    }
+    return DEFAULT_PROFILE;
   });
   const [analysis, setAnalysis] = useState<{bmi: number, category: string} | null>(null);
   const [medicalReadiness, setMedicalReadiness] = useState<{status: 'green'|'amber'|'red', reason: string} | null>(null);
-  
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-     // Initial calculation on load if data exists
+     if (authProfile) {
+       setProfile({
+         height: authProfile.height,
+         weight: authProfile.weight,
+         age: authProfile.age,
+         activityLevel: authProfile.activityLevel as any,
+         trainingFreq: authProfile.trainingFreq,
+         goal: authProfile.goal as any,
+         nextMedicalDate: authProfile.nextMedicalDate || undefined,
+         restingHeartRate: authProfile.restingHeartRate || undefined,
+       });
+     }
+  }, [authProfile]);
+
+  useEffect(() => {
      if (profile.height && profile.weight) {
         setAnalysis(calculateBMI(profile.height, profile.weight));
      }
@@ -89,17 +115,29 @@ export default function Profile() {
      });
   };
 
-  const handleSave = () => {
-    localStorage.setItem("flightfuel_profile", JSON.stringify(profile));
-    
-    const result = calculateBMI(profile.height, profile.weight);
-    setAnalysis(result);
-    assessReadiness();
-    
-    toast({
-      title: "Profile Updated",
-      description: "Flight plan targets recalibrated based on new biometrics.",
-    });
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await profileApi.update(profile);
+      await refetchProfile();
+      
+      const result = calculateBMI(profile.height, profile.weight);
+      setAnalysis(result);
+      assessReadiness();
+      
+      toast({
+        title: "Profile Updated",
+        description: "Flight plan targets recalibrated based on new biometrics.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleInputChange = (field: keyof PilotProfile, value: string) => {
@@ -334,8 +372,8 @@ export default function Profile() {
         </div>
       </CockpitCard>
 
-      <Button onClick={handleSave} className="w-full font-mono tracking-wider" size="lg">
-        <Save className="w-4 h-4 mr-2" /> SAVE PROFILE
+      <Button onClick={handleSave} className="w-full font-mono tracking-wider" size="lg" disabled={saving}>
+        <Save className="w-4 h-4 mr-2" /> {saving ? "SAVING..." : "SAVE PROFILE"}
       </Button>
 
       <CockpitCard title="Account" className="mt-4">
