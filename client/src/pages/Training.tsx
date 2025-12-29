@@ -311,29 +311,29 @@ export default function Training() {
                                         <DialogHeader>
                                           <DialogTitle className="flex items-center gap-2">
                                             {currentName}
-                                            {ex.originalDef.youtubeId && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">Video</span>}
+                                            {ex.originalDef.videoUrl && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">Video Guide</span>}
                                           </DialogTitle>
                                           <DialogDescription>
                                             {ex.originalDef.description}
                                           </DialogDescription>
                                         </DialogHeader>
                                         <div className="rounded-lg overflow-hidden mt-2 bg-black/5">
-                                          {ex.originalDef.youtubeId ? (
-                                            <iframe
-                                              src={`https://www.youtube.com/embed/${ex.originalDef.youtubeId}?rel=0`}
-                                              title={currentName}
-                                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                              allowFullScreen
-                                              className="w-full aspect-video"
-                                            />
-                                          ) : (
-                                            <img 
-                                              src={ex.originalDef.image} 
-                                              alt={currentName}
-                                              className="w-full h-64 object-cover"
-                                            />
-                                          )}
+                                          <img 
+                                            src={ex.originalDef.image} 
+                                            alt={currentName}
+                                            className="w-full h-48 object-cover"
+                                          />
                                         </div>
+                                        {ex.originalDef.videoUrl && (
+                                          <a 
+                                            href={ex.originalDef.videoUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-mono transition-colors"
+                                          >
+                                            <Play className="w-4 h-4" /> Watch Video Guide
+                                          </a>
+                                        )}
                                         <div className="flex gap-4 text-xs font-mono text-muted-foreground border-t pt-4 mt-2">
                                             <div className="flex flex-col">
                                                 <span className="uppercase text-[10px] opacity-70">Target Sets</span>
