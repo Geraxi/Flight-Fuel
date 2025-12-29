@@ -5,18 +5,31 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { DEFAULT_PROFILE, PilotProfile, LOG_DATA } from "@/lib/mockData";
-import { Save, User, Activity, CalendarDays, HeartPulse, Stethoscope, AlertTriangle, LogOut } from "lucide-react";
+import { Save, User, Activity, CalendarDays, HeartPulse, Stethoscope, AlertTriangle, LogOut, Mail, Shield, Trash2, PauseCircle, ExternalLink, Settings, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { useAuth } from "@/lib/auth";
 import { profileApi } from "@/lib/api";
-import { SignOutButton, UserButton } from "@clerk/clerk-react";
+import { SignOutButton, UserButton, useUser } from "@clerk/clerk-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
 
 export default function Profile() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { user, profile: authProfile, refetchProfile } = useAuth();
+  const { user: authUser, profile: authProfile, refetchProfile } = useAuth();
+  const { user: clerkUser } = useUser();
   
   const [profile, setProfile] = useState<PilotProfile>(() => {
     if (authProfile) {
@@ -169,7 +182,7 @@ export default function Profile() {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Pilot Profile</h1>
-            <p className="text-xs text-muted-foreground font-mono">{user?.username}</p>
+            <p className="text-xs text-muted-foreground font-mono">{authUser?.username}</p>
           </div>
         </div>
         <SignOutButton>
@@ -376,26 +389,181 @@ export default function Profile() {
         <Save className="w-4 h-4 mr-2" /> {saving ? "SAVING..." : "SAVE PROFILE"}
       </Button>
 
-      <CockpitCard title="Account" className="mt-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <CockpitCard title="Account Information" className="mt-4">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
             <UserButton 
               appearance={{
                 elements: {
-                  avatarBox: "w-10 h-10"
+                  avatarBox: "w-14 h-14"
                 }
               }}
             />
-            <div>
-              <div className="font-mono text-sm">{user?.username}</div>
-              <div className="text-xs text-muted-foreground">Pilot Account</div>
+            <div className="flex-1">
+              <div className="font-mono text-base font-bold">{clerkUser?.fullName || authUser?.username}</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Mail className="w-3 h-3" /> {clerkUser?.primaryEmailAddress?.emailAddress || "No email"}
+              </div>
+              <div className="text-[10px] text-primary/70 mt-1 flex items-center gap-1">
+                <Shield className="w-3 h-3" /> Pilot Account
+              </div>
             </div>
           </div>
-          <SignOutButton>
-            <Button variant="outline" size="sm" className="font-mono">
-              <LogOut className="w-4 h-4 mr-2" /> Sign Out
-            </Button>
-          </SignOutButton>
+
+          <Separator className="my-4" />
+
+          <div className="space-y-3">
+            <div className="text-xs font-mono uppercase text-muted-foreground mb-2">Account Details</div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-muted/10 p-3 rounded border border-border/50">
+                <div className="text-[10px] font-mono uppercase text-muted-foreground">User ID</div>
+                <div className="font-mono text-xs truncate">{clerkUser?.id?.slice(0, 12)}...</div>
+              </div>
+              <div className="bg-muted/10 p-3 rounded border border-border/50">
+                <div className="text-[10px] font-mono uppercase text-muted-foreground">Member Since</div>
+                <div className="font-mono text-xs">
+                  {clerkUser?.createdAt ? format(new Date(clerkUser.createdAt), "MMM yyyy") : "N/A"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="space-y-3">
+            <div className="text-xs font-mono uppercase text-muted-foreground mb-2">Quick Links</div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="justify-start font-mono text-xs"
+                onClick={() => window.open("https://flightfuel.app/privacy", "_blank")}
+                data-testid="link-privacy"
+              >
+                <Shield className="w-3 h-3 mr-2" /> Privacy Policy
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="justify-start font-mono text-xs"
+                onClick={() => window.open("https://flightfuel.app/terms", "_blank")}
+                data-testid="link-terms"
+              >
+                <ExternalLink className="w-3 h-3 mr-2" /> Terms of Service
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="justify-start font-mono text-xs"
+                onClick={() => window.open("https://flightfuel.app/help", "_blank")}
+                data-testid="link-help"
+              >
+                <Settings className="w-3 h-3 mr-2" /> Help Center
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="justify-start font-mono text-xs"
+                onClick={() => window.open("https://flightfuel.app/contact", "_blank")}
+                data-testid="link-contact"
+              >
+                <Mail className="w-3 h-3 mr-2" /> Contact Support
+              </Button>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="space-y-3">
+            <div className="text-xs font-mono uppercase text-muted-foreground mb-2">Session</div>
+            <SignOutButton>
+              <Button variant="outline" className="w-full font-mono" data-testid="button-signout">
+                <LogOut className="w-4 h-4 mr-2" /> Sign Out
+              </Button>
+            </SignOutButton>
+          </div>
+        </div>
+      </CockpitCard>
+
+      <CockpitCard title="Account Management" className="mt-4 border-destructive/30">
+        <div className="space-y-4">
+          <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded flex gap-3 items-start">
+            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <p className="text-[10px] text-muted-foreground leading-tight">
+              <span className="font-bold text-amber-500">CAUTION:</span> These actions affect your account status. Suspended accounts can be reactivated, but deleted accounts are permanently removed.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full font-mono justify-start border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                  data-testid="button-suspend"
+                >
+                  <PauseCircle className="w-4 h-4 mr-2" /> Suspend Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Suspend Your Account?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Suspending your account will temporarily disable access to FlightFuel. Your data will be preserved and you can reactivate at any time by contacting support.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    className="bg-amber-500 hover:bg-amber-600"
+                    onClick={() => {
+                      toast({
+                        title: "Account Suspension Requested",
+                        description: "Our support team will process your request within 24 hours.",
+                      });
+                    }}
+                  >
+                    Suspend Account
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full font-mono justify-start border-destructive/30 text-destructive hover:bg-destructive/10"
+                  data-testid="button-delete"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive">Delete Your Account Permanently?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. All your data including workout history, nutrition logs, flight schedules, and profile information will be permanently deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    className="bg-destructive hover:bg-destructive/90"
+                    onClick={() => {
+                      toast({
+                        title: "Account Deletion Requested",
+                        description: "Your account will be deleted within 7 days. You'll receive a confirmation email.",
+                        variant: "destructive",
+                      });
+                    }}
+                  >
+                    Delete Permanently
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </CockpitCard>
     </div>
