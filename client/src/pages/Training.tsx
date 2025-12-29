@@ -8,7 +8,7 @@ import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, Fil
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { MOCK_EXERCISES, ALTERNATIVES, type ExerciseDef } from "@/lib/exercises";
+import { EXERCISE_DATABASE, ALTERNATIVES, getExercisesByCategory, shuffleArray, type ExerciseDef } from "@/lib/exercises";
 import {
   Dialog,
   DialogContent,
@@ -65,71 +65,129 @@ export default function Training() {
   const { toast } = useToast();
 
   const generatePlan = () => {
-    // Mock plan generation logic
     const plan: WorkoutSession[] = [];
     const days = prefs.daysPerWeek;
+    const seed = Date.now();
+    
+    const workoutSplits = {
+      3: [
+        { name: "Push Day", categories: ["push"], exerciseCount: 4 },
+        { name: "Pull Day", categories: ["pull"], exerciseCount: 4 },
+        { name: "Leg Day", categories: ["legs"], exerciseCount: 4 },
+      ],
+      4: [
+        { name: "Upper A", categories: ["push", "pull"], exerciseCount: 5 },
+        { name: "Lower A", categories: ["legs"], exerciseCount: 4 },
+        { name: "Upper B", categories: ["push", "pull"], exerciseCount: 5 },
+        { name: "Lower B", categories: ["legs"], exerciseCount: 4 },
+      ],
+      5: [
+        { name: "Push Day", categories: ["push"], exerciseCount: 4 },
+        { name: "Pull Day", categories: ["pull"], exerciseCount: 4 },
+        { name: "Leg Day", categories: ["legs"], exerciseCount: 4 },
+        { name: "Upper Body", categories: ["push", "pull"], exerciseCount: 5 },
+        { name: "Cardio + Core", categories: ["cardio", "core"], exerciseCount: 4 },
+      ],
+      6: [
+        { name: "Push A", categories: ["push"], exerciseCount: 4 },
+        { name: "Pull A", categories: ["pull"], exerciseCount: 4 },
+        { name: "Legs A", categories: ["legs"], exerciseCount: 4 },
+        { name: "Push B", categories: ["push"], exerciseCount: 4 },
+        { name: "Pull B", categories: ["pull"], exerciseCount: 4 },
+        { name: "Legs B", categories: ["legs"], exerciseCount: 4 },
+      ],
+    };
+    
+    const templates = workoutSplits[days as keyof typeof workoutSplits] || workoutSplits[3];
     
     for (let i = 0; i < days; i++) {
-      let type: "strength" | "conditioning" | "mobility" = "strength";
-      if (prefs.goal === "Lose Fat" && i % 2 !== 0) type = "conditioning";
-      if (prefs.goal === "Maintenance" && i === days - 1) type = "mobility";
+      const template = templates[i % templates.length];
+      let sessionType = template.name;
       
-      const exercises = MOCK_EXERCISES[type].map(ex => {
-          const isCardio = ex.isCardio || false;
-          const numSets = isCardio ? 1 : (parseInt(ex.sets.split('-')[0]) || 3);
-          const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
-              reps: "",
-              weight: "",
-              completed: false
-          }));
+      if (prefs.goal === "Lose Fat" && i % 2 !== 0) {
+        sessionType = "Cardio + Conditioning";
+      }
+      if (prefs.goal === "Maintenance" && i === days - 1) {
+        sessionType = "Recovery + Mobility";
+      }
+      
+      const exercisePool: ExerciseDef[] = [];
+      
+      if (sessionType === "Cardio + Conditioning") {
+        exercisePool.push(...getExercisesByCategory("cardio"));
+        exercisePool.push(...getExercisesByCategory("core"));
+      } else if (sessionType === "Recovery + Mobility") {
+        exercisePool.push(...getExercisesByCategory("mobility"));
+        exercisePool.push(...getExercisesByCategory("core"));
+      } else {
+        template.categories.forEach(cat => {
+          exercisePool.push(...getExercisesByCategory(cat));
+        });
+      }
+      
+      const shuffled = shuffleArray(exercisePool, seed + i);
+      let exerciseCount = template.exerciseCount;
+      
+      if (prefs.sessionLength < 45) exerciseCount = Math.min(3, exerciseCount);
+      else if (prefs.sessionLength > 60) exerciseCount = Math.min(exerciseCount + 2, shuffled.length);
+      
+      const selectedExercises = shuffled.slice(0, exerciseCount);
+      
+      const exercises: ExerciseLog[] = selectedExercises.map(ex => {
+        const isCardio = ex.isCardio || false;
+        const numSets = isCardio ? 1 : (parseInt(ex.sets.split('-')[0]) || 3);
+        const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
+          reps: "",
+          weight: "",
+          completed: false
+        }));
 
-          return {
-              name: ex.name,
-              targetSets: ex.sets,
-              targetReps: ex.reps,
-              sets,
-              rest: ex.rest,
-              completed: false,
-              isCardio,
-              cardioLog: isCardio ? { totalDistance: "", totalTime: "", avgPace: "" } : undefined,
-              originalDef: ex
-          };
+        return {
+          name: ex.name,
+          targetSets: ex.sets,
+          targetReps: ex.reps,
+          sets,
+          rest: ex.rest,
+          completed: false,
+          isCardio,
+          cardioLog: isCardio ? { totalDistance: "", totalTime: "", avgPace: "" } : undefined,
+          originalDef: ex
+        };
       });
 
-      // Trim based on session length
-      if (prefs.sessionLength < 45) exercises.splice(2); // Short session
-      else if (prefs.sessionLength > 60) {
-           MOCK_EXERCISES.mobility.slice(0, 2).forEach(ex => {
-               const numSets = parseInt(ex.sets.split('-')[0]) || 2;
-               const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
-                   reps: "",
-                   weight: "",
-                   completed: false
-               }));
-               
-               exercises.push({
-                   name: ex.name,
-                   targetSets: ex.sets,
-                   targetReps: ex.reps,
-                   sets,
-                   rest: ex.rest,
-                   completed: false,
-                   isCardio: false,
-                   cardioLog: undefined,
-                   originalDef: ex
-               });
-           });
+      if (prefs.sessionLength > 60 && sessionType !== "Recovery + Mobility") {
+        const mobilityExercises = shuffleArray(getExercisesByCategory("mobility"), seed + i + 100);
+        mobilityExercises.slice(0, 2).forEach(ex => {
+          const numSets = parseInt(ex.sets.split('-')[0]) || 2;
+          const sets: SetLog[] = Array(numSets).fill(null).map(() => ({
+            reps: "",
+            weight: "",
+            completed: false
+          }));
+          
+          exercises.push({
+            name: ex.name,
+            targetSets: ex.sets,
+            targetReps: ex.reps,
+            sets,
+            rest: ex.rest,
+            completed: false,
+            isCardio: false,
+            cardioLog: undefined,
+            originalDef: ex
+          });
+        });
       }
       
       plan.push({
         day: i + 1,
-        type: type.charAt(0).toUpperCase() + type.slice(1),
+        type: sessionType,
         exercises,
         completed: false
       });
     }
     setGeneratedPlan(plan);
-    setSwappedExercises({}); // Reset swaps
+    setSwappedExercises({});
   };
 
   const handleSwap = (sessionIndex: number, exerciseIndex: number, originalName: string, currentName: string) => {
