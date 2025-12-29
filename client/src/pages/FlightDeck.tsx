@@ -1,23 +1,71 @@
 import { CockpitCard, InstrumentDisplay, Annunciator, GaugeRing } from "@/components/ui/CockpitCard";
 import { CURRENT_DUTY, CHECKLIST_ITEMS, ADVISORIES, SUPPLEMENT_STACK } from "@/lib/mockData";
-import { Plane, AlertTriangle, CheckCircle2, Circle, Settings, Pill, Clock, Droplets, Zap, Heart, Shield, Brain, Dumbbell, Moon, Activity } from "lucide-react";
+import { Plane, AlertTriangle, CheckCircle2, Settings, Pill, Clock, Droplets, Zap, Heart, Shield, Brain, Dumbbell, Moon, Activity } from "lucide-react";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/auth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+interface ChecklistItem {
+  id: string;
+  itemId: string;
+  label: string;
+  status: string;
+  value: string | null;
+}
 
 export default function FlightDeck() {
-  const [checklist, setChecklist] = useState(CHECKLIST_ITEMS);
   const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const today = new Date().toISOString().split("T")[0];
   
   const userGoal = profile?.goal || "Maintain";
 
-  const toggleChecklist = (id: string) => {
-    setChecklist(prev => prev.map(item => 
-      item.id === id 
-        ? { ...item, status: item.status === "complete" ? "pending" : "complete" }
-        : item
-    ));
+  const { data: savedChecklist = [], isLoading } = useQuery<ChecklistItem[]>({
+    queryKey: ["/api/checklists", today],
+    queryFn: () => apiRequest("GET", `/api/checklists/${today}`).then(res => res.json()),
+  });
+
+  const mergedChecklist = CHECKLIST_ITEMS.map(item => {
+    const saved = savedChecklist.find(s => s.itemId === item.id);
+    return {
+      ...item,
+      dbId: saved?.id,
+      status: saved?.status || item.status,
+    };
+  });
+
+  const createChecklistMutation = useMutation({
+    mutationFn: (data: { itemId: string; label: string; status: string; value?: string }) => 
+      apiRequest("POST", "/api/checklists", { ...data, date: today }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checklists", today] });
+    },
+  });
+
+  const updateChecklistMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => 
+      apiRequest("PUT", `/api/checklists/${id}`, { status }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checklists", today] });
+    },
+  });
+
+  const toggleChecklist = (item: typeof mergedChecklist[0]) => {
+    const newStatus = item.status === "complete" ? "pending" : "complete";
+    
+    if (item.dbId) {
+      updateChecklistMutation.mutate({ id: item.dbId, status: newStatus });
+    } else {
+      createChecklistMutation.mutate({
+        itemId: item.id,
+        label: item.label,
+        status: newStatus,
+        value: item.value,
+      });
+    }
   };
 
   const getIcon = (iconName?: string) => {
@@ -40,8 +88,8 @@ export default function FlightDeck() {
     }
   };
 
-  const completedCount = checklist.filter(item => item.status === "complete").length;
-  const totalCount = checklist.length;
+  const completedCount = mergedChecklist.filter(item => item.status === "complete").length;
+  const totalCount = mergedChecklist.length;
   const checklistProgress = Math.round((completedCount / totalCount) * 100);
 
   return (
@@ -144,30 +192,34 @@ export default function FlightDeck() {
           <span className="font-mono text-xs text-primary">{completedCount}/{totalCount}</span>
         </div>
         
-        {checklist.map((item) => (
-          <div 
-            key={item.id}
-            onClick={() => toggleChecklist(item.id)}
-            data-testid={`checklist-item-${item.id}`}
-            className="group flex items-center justify-between p-3 instrument-bezel hover:border-primary/50 transition-all cursor-pointer select-none"
-          >
-            <div className="flex items-center gap-3">
-              {item.status === "complete" ? (
-                <div className="w-5 h-5 rounded-full bg-primary/20 border border-primary flex items-center justify-center">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                </div>
-              ) : (
-                <div className="w-5 h-5 rounded-full border border-muted-foreground/50 group-hover:border-primary/50 transition-colors" />
-              )}
-              <span className={`font-medium text-sm transition-colors ${item.status === "complete" ? "text-primary" : "text-foreground"}`}>
-                {item.label}
+        {isLoading ? (
+          <div className="text-center py-4 text-muted-foreground text-sm">Loading checklist...</div>
+        ) : (
+          mergedChecklist.map((item) => (
+            <div 
+              key={item.id}
+              onClick={() => toggleChecklist(item)}
+              data-testid={`checklist-item-${item.id}`}
+              className="group flex items-center justify-between p-3 instrument-bezel hover:border-primary/50 transition-all cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-3">
+                {item.status === "complete" ? (
+                  <div className="w-5 h-5 rounded-full bg-primary/20 border border-primary flex items-center justify-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                ) : (
+                  <div className="w-5 h-5 rounded-full border border-muted-foreground/50 group-hover:border-primary/50 transition-colors" />
+                )}
+                <span className={`font-medium text-sm transition-colors ${item.status === "complete" ? "text-primary" : "text-foreground"}`}>
+                  {item.label}
+                </span>
+              </div>
+              <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                {item.value}
               </span>
             </div>
-            <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-              {item.value}
-            </span>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       <CockpitCard title="Supplement Protocol" variant="default">
