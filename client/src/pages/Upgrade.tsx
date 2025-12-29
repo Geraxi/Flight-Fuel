@@ -141,7 +141,7 @@ export default function Upgrade() {
           >
             <div className="text-sm text-cyan-400/70 mb-1">Monthly</div>
             <div className="text-xl font-bold text-white">
-              ${monthlyPrice ? (monthlyPrice.unit_amount / 100).toFixed(2) : '9.99'}
+              ${monthlyPrice ? (monthlyPrice.unit_amount / 100).toFixed(2) : '49.99'}
               <span className="text-sm font-normal text-cyan-400/60">/mo</span>
             </div>
           </button>
@@ -159,7 +159,7 @@ export default function Upgrade() {
             </div>
             <div className="text-sm text-amber-400/70 mb-1">Yearly</div>
             <div className="text-xl font-bold text-white">
-              ${yearlyPrice ? (yearlyPrice.unit_amount / 100).toFixed(2) : '79.99'}
+              ${yearlyPrice ? (yearlyPrice.unit_amount / 100).toFixed(2) : '399.99'}
               <span className="text-sm font-normal text-cyan-400/60">/yr</span>
             </div>
           </button>
