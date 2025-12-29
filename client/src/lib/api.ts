@@ -73,3 +73,11 @@ export const checklistsApi = {
   update: (id: string, status: string, value?: string) => 
     apiRequest<any>(`/api/checklists/${id}`, { method: "PUT", body: JSON.stringify({ status, value }) }),
 };
+
+// Subscription API
+export const subscriptionApi = {
+  getStatus: () => apiRequest<{ subscription: any; status: string }>("/api/subscription"),
+  checkout: (priceId: string) => apiRequest<{ url: string }>("/api/checkout", { method: "POST", body: JSON.stringify({ priceId }) }),
+  portal: () => apiRequest<{ url: string }>("/api/portal", { method: "POST" }),
+  getProducts: () => apiRequest<{ data: any[] }>("/api/products"),
+};

@@ -5,12 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { DEFAULT_PROFILE, PilotProfile, LOG_DATA } from "@/lib/mockData";
-import { Save, User, Activity, CalendarDays, HeartPulse, Stethoscope, AlertTriangle, LogOut, Mail, Shield, Trash2, PauseCircle, ExternalLink, Settings, Key } from "lucide-react";
+import { Save, User, Activity, CalendarDays, HeartPulse, Stethoscope, AlertTriangle, LogOut, Mail, Shield, Trash2, PauseCircle, ExternalLink, Settings, Key, Crown, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { useAuth } from "@/lib/auth";
-import { profileApi } from "@/lib/api";
+import { usePremium } from "@/lib/premium";
+import { profileApi, subscriptionApi } from "@/lib/api";
 import { SignOutButton, UserButton, useUser } from "@clerk/clerk-react";
 import {
   AlertDialog,
@@ -30,6 +31,7 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const { user: authUser, profile: authProfile, refetchProfile } = useAuth();
   const { user: clerkUser } = useUser();
+  const { isPremium, subscriptionStatus, loading: premiumLoading } = usePremium();
   
   const [profile, setProfile] = useState<PilotProfile>(() => {
     if (authProfile) {
@@ -388,6 +390,60 @@ export default function Profile() {
       <Button onClick={handleSave} className="w-full font-mono tracking-wider" size="lg" disabled={saving}>
         <Save className="w-4 h-4 mr-2" /> {saving ? "SAVING..." : "SAVE PROFILE"}
       </Button>
+
+      {/* Subscription Section */}
+      <CockpitCard title="Subscription" className="mt-4">
+        {premiumLoading ? (
+          <div className="text-center text-muted-foreground py-4">Loading...</div>
+        ) : isPremium ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-amber-500/20 rounded-full">
+                <Crown className="w-6 h-6 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <div className="font-mono font-bold text-amber-400">FlightFuel Premium</div>
+                <div className="text-xs text-muted-foreground capitalize">Status: {subscriptionStatus}</div>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full font-mono"
+              onClick={() => setLocation('/upgrade')}
+              data-testid="button-manage-subscription"
+            >
+              <Settings className="w-4 h-4 mr-2" /> Manage Subscription
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-amber-500/20 rounded-lg">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-mono font-bold text-white">Upgrade to Premium</h4>
+                  <p className="text-xs text-muted-foreground">Unlock AI scanning, videos & more</p>
+                </div>
+              </div>
+              <ul className="text-xs text-muted-foreground space-y-1 mb-4 ml-10">
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> AI-powered meal scanning</li>
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Full exercise video library</li>
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Advanced analytics dashboard</li>
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Personalized recommendations</li>
+              </ul>
+              <Button 
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 font-mono"
+                onClick={() => setLocation('/upgrade')}
+                data-testid="button-upgrade-premium"
+              >
+                <Sparkles className="w-4 h-4 mr-2" /> Upgrade Now - $9.99/mo
+              </Button>
+            </div>
+          </div>
+        )}
+      </CockpitCard>
 
       <CockpitCard title="Account Information" className="mt-4">
         <div className="space-y-4">

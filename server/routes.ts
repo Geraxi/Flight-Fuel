@@ -10,6 +10,8 @@ import {
   insertDailyChecklistSchema,
 } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { stripeService } from "./stripeService";
+import { getStripePublishableKey } from "./stripeClient";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -295,6 +297,123 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Checklist item not found" });
       }
       res.json(checklist);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Stripe routes
+  app.get("/api/stripe/publishable-key", async (req, res, next) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/subscription", requireAuth(), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user?.stripeSubscriptionId) {
+        return res.json({ subscription: null, status: user?.subscriptionStatus || 'free' });
+      }
+      const subscription = await storage.getSubscription(user.stripeSubscriptionId);
+      res.json({ subscription, status: user.subscriptionStatus || 'free' });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/checkout", requireAuth(), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { priceId } = req.body;
+      if (!priceId) {
+        return res.status(400).json({ message: "Price ID required" });
+      }
+
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripeService.createCustomer(user.username, user.id);
+        await storage.updateUserStripeInfo(user.id, { stripeCustomerId: customer.id });
+        customerId = customer.id;
+      }
+
+      const session = await stripeService.createCheckoutSession(
+        customerId,
+        priceId,
+        `${req.protocol}://${req.get('host')}/profile?checkout=success`,
+        `${req.protocol}://${req.get('host')}/profile?checkout=cancelled`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/portal", requireAuth(), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user?.stripeCustomerId) {
+        return res.status(400).json({ message: "No subscription found" });
+      }
+
+      const session = await stripeService.createCustomerPortalSession(
+        user.stripeCustomerId,
+        `${req.protocol}://${req.get('host')}/profile`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/products", async (req, res, next) => {
+    try {
+      const rows = await storage.listProductsWithPrices();
+      const productsMap = new Map();
+      for (const row of rows) {
+        if (!productsMap.has(row.product_id)) {
+          productsMap.set(row.product_id, {
+            id: row.product_id,
+            name: row.product_name,
+            description: row.product_description,
+            active: row.product_active,
+            metadata: row.product_metadata,
+            prices: []
+          });
+        }
+        if (row.price_id) {
+          productsMap.get(row.product_id).prices.push({
+            id: row.price_id,
+            unit_amount: row.unit_amount,
+            currency: row.currency,
+            recurring: row.recurring,
+            active: row.price_active,
+            metadata: row.price_metadata,
+          });
+        }
+      }
+      res.json({ data: Array.from(productsMap.values()) });
     } catch (error) {
       next(error);
     }

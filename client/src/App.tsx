@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { SignIn, SignUp, SignedIn, SignedOut, useClerk, RedirectToSignIn } from "@clerk/clerk-react";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { PremiumProvider } from "@/lib/premium";
 import { setAuthTokenGetter } from "@/lib/api";
 import { useEffect } from "react";
 import BottomNav from "@/components/layout/BottomNav";
@@ -14,6 +15,7 @@ import Log from "@/pages/Log";
 import Profile from "@/pages/Profile";
 import Training from "@/pages/Training";
 import Progress from "@/pages/Progress";
+import Upgrade from "@/pages/Upgrade";
 import OnboardingPage from "@/pages/OnboardingPage";
 import NotFound from "@/pages/not-found";
 
@@ -50,6 +52,7 @@ function AuthenticatedApp() {
             <Route path="/log" component={Log} />
             <Route path="/progress" component={Progress} />
             <Route path="/profile" component={Profile} />
+            <Route path="/upgrade" component={Upgrade} />
             <Route component={NotFound} />
           </Switch>
         </div>
@@ -89,7 +92,9 @@ function Router() {
       </SignedOut>
       <SignedIn>
         <AuthProvider>
-          <AuthenticatedApp />
+          <PremiumProvider>
+            <AuthenticatedApp />
+          </PremiumProvider>
         </AuthProvider>
       </SignedIn>
     </>
