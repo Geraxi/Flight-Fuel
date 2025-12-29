@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,6 +8,7 @@ import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, Fil
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { EXERCISE_DATABASE, ALTERNATIVES, getExercisesByCategory, getExercisesByMuscleGroup, getWarmupExercises, getCoreExercises, getCardioFinishers, filterByEquipment, shuffleArray, type ExerciseDef, type EquipmentFilter } from "@/lib/exercises";
 import {
   Dialog,
@@ -52,6 +53,9 @@ type WorkoutSession = {
 };
 
 export default function Training() {
+  const { profile } = useAuth();
+  const { toast } = useToast();
+
   const [prefs, setPrefs] = useState<TrainingPreferences>({
     experience: "Intermediate",
     goal: "Maintenance",
@@ -60,9 +64,31 @@ export default function Training() {
     equipment: "Full Gym"
   });
 
+  useEffect(() => {
+    if (profile) {
+      const goalMap: Record<string, TrainingPreferences["goal"]> = {
+        "Cut": "Lose Fat",
+        "Maintain": "Maintenance",
+        "Performance": "Build Strength",
+        "Bulk": "Build Muscle",
+      };
+      const equipmentMap: Record<string, TrainingPreferences["equipment"]> = {
+        "Gym": "Full Gym",
+        "Home": "Dumbbells Only",
+        "Outdoors": "Bodyweight",
+        "Hotel": "Bodyweight",
+      };
+      setPrefs(prev => ({
+        ...prev,
+        goal: goalMap[profile.goal] || "Maintenance",
+        daysPerWeek: profile.trainingFreq || 3,
+        equipment: equipmentMap[profile.trainingLocation || "Gym"] || "Full Gym",
+      }));
+    }
+  }, [profile]);
+
   const [generatedPlan, setGeneratedPlan] = useState<WorkoutSession[] | null>(null);
   const [swappedExercises, setSwappedExercises] = useState<Record<string, string>>({});
-  const { toast } = useToast();
 
   const createExerciseLog = (ex: ExerciseDef): ExerciseLog => {
     const isCardio = ex.isCardio || false;

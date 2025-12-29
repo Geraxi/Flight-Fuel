@@ -1,4 +1,4 @@
-import { LOG_DATA, DEFAULT_PROFILE, PilotProfile } from "@/lib/mockData";
+import { LOG_DATA } from "@/lib/mockData";
 import { CockpitCard } from "@/components/ui/CockpitCard";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Battery, Scale, Moon, Settings, Edit2, Zap, Utensils, Activity, Radio, AlertTriangle } from "lucide-react";
@@ -6,6 +6,9 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/lib/auth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 function SimpleSlider({ value, onValueChange, max, className, trackColor = "bg-primary" }: any) {
   const val = value[0];
@@ -13,14 +16,12 @@ function SimpleSlider({ value, onValueChange, max, className, trackColor = "bg-p
   
   return (
     <div className={`relative flex items-center select-none touch-none w-full h-8 ${className}`}>
-      {/* Track Background with Segments */}
       <div className={`absolute w-full h-2 ${trackColor}/10 rounded-sm overflow-hidden flex gap-[2px]`}>
         {Array.from({ length: 20 }).map((_, i) => (
           <div key={i} className="flex-1 bg-current opacity-20" />
         ))}
       </div>
       
-      {/* Active Track */}
       <div className="absolute w-full h-2 rounded-sm overflow-hidden flex gap-[2px] pointer-events-none">
         {Array.from({ length: 20 }).map((_, i) => {
            const isActive = (i + 1) * 5 <= percentage;
@@ -43,7 +44,6 @@ function SimpleSlider({ value, onValueChange, max, className, trackColor = "bg-p
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
       />
       
-      {/* Thumb Indicator */}
       <div 
         className={`absolute h-4 w-1 bg-foreground shadow-[0_0_10px_currentColor] pointer-events-none transition-all duration-100 ease-out z-20`}
         style={{ left: `calc(${percentage}% - 2px)` }}
@@ -154,25 +154,45 @@ function getAdvice(energy: number, hunger: number, mood: number, sleep: number) 
 }
 
 export default function Log() {
-  const [profile, setProfile] = useState<PilotProfile>(DEFAULT_PROFILE);
-  const [dailyStats, setDailyStats] = useState({
-    energy: 85,
-    hunger: 50,
-    mood: 3, // 1-5 scale
-    sleep: 7.5
-  });
-  
-  useEffect(() => {
-    const saved = localStorage.getItem("flightfuel_profile");
-    if (saved) {
-      setProfile(JSON.parse(saved));
-    }
-  }, []);
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const today = new Date().toISOString().split("T")[0];
 
-  const handleUpdate = (field: keyof PilotProfile, value: number) => {
-    const newProfile = { ...profile, [field]: value };
-    setProfile(newProfile);
-    localStorage.setItem("flightfuel_profile", JSON.stringify(newProfile));
+  const { data: healthLog } = useQuery({
+    queryKey: ["/api/health", today],
+    queryFn: () => apiRequest("GET", `/api/health/${today}`).then(res => res.json()),
+  });
+
+  const [dailyStats, setDailyStats] = useState({
+    energy: 50,
+    hunger: 50,
+    mood: 3,
+    sleep: 7
+  });
+
+  useEffect(() => {
+    if (healthLog) {
+      setDailyStats({
+        energy: healthLog.energy ?? 50,
+        hunger: healthLog.hunger ?? 50,
+        mood: healthLog.mood ?? 3,
+        sleep: healthLog.sleep ?? 7,
+      });
+    }
+  }, [healthLog]);
+
+  const updateHealthMutation = useMutation({
+    mutationFn: (data: typeof dailyStats) => 
+      apiRequest("POST", "/api/health", { ...data, date: today }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/health", today] });
+    },
+  });
+
+  const handleStatChange = (field: keyof typeof dailyStats, value: number) => {
+    const newStats = { ...dailyStats, [field]: value };
+    setDailyStats(newStats);
+    updateHealthMutation.mutate(newStats);
   };
 
   return (
@@ -208,9 +228,7 @@ export default function Log() {
          </div>
       </div>
 
-      {/* Quick Stats Grid */}
       <div className="grid grid-cols-3 gap-3">
-        {/* Weight Panel */}
         <div className="bg-card border border-border rounded-2xl relative group overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
           <div className="p-3 flex flex-col items-center">
@@ -219,21 +237,14 @@ export default function Log() {
               <div className="text-[8px] font-mono text-muted-foreground uppercase">WGT.LOAD</div>
             </div>
             <div className="relative">
-              <Input 
-                 type="number" 
-                 className="text-xl font-mono font-bold text-center border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-foreground w-full" 
-                 value={profile.weight}
-                 onChange={(e) => handleUpdate('weight', Number(e.target.value))}
-               />
-               <div className="absolute top-0 right-0 -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit2 className="w-2 h-2 text-primary" />
-               </div>
+              <div className="text-xl font-mono font-bold text-center text-foreground">
+                {profile?.weight || "--"}
+              </div>
             </div>
             <div className="text-[10px] text-muted-foreground font-mono mt-1">KG</div>
           </div>
         </div>
         
-        {/* Sleep Panel */}
         <div className="bg-card border border-border rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
           <div className="p-3 flex flex-col items-center">
@@ -246,191 +257,122 @@ export default function Log() {
                  type="number" 
                  className="text-xl font-mono font-bold text-center border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-foreground w-full" 
                  value={dailyStats.sleep}
-                 onChange={(e) => setDailyStats({...dailyStats, sleep: Number(e.target.value)})}
-                 step={0.5}
+                 onChange={(e) => handleStatChange('sleep', Number(e.target.value))}
+                 data-testid="input-sleep"
                />
-               <div className="absolute top-0 right-0 -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit2 className="w-2 h-2 text-primary" />
-               </div>
             </div>
             <div className="text-[10px] text-muted-foreground font-mono mt-1">HRS</div>
           </div>
         </div>
         
-        {/* Energy Panel */}
         <div className="bg-card border border-border rounded-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
           <div className="p-3 flex flex-col items-center">
-             <div className="flex items-center justify-between w-full mb-2">
-              <Battery className="w-3 h-3 text-primary" />
-              <div className="text-[8px] font-mono text-primary uppercase">PWR.LVL</div>
+            <div className="flex items-center justify-between w-full mb-2">
+              <Battery className="w-3 h-3 text-muted-foreground" />
+              <div className="text-[8px] font-mono text-muted-foreground uppercase">ENG.LVL</div>
             </div>
-             <div className="text-xl font-mono font-bold text-primary text-shadow-glow">{dailyStats.energy}%</div>
-             <div className="text-[10px] text-muted-foreground font-mono mt-1">CAPACITY</div>
+            <div className="text-xl font-mono font-bold">{dailyStats.energy}%</div>
+            <div className="text-[10px] text-muted-foreground font-mono mt-1">PWR</div>
           </div>
         </div>
       </div>
-      
-      {/* Dynamic Advice Panel */}
-      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        {getAdvice(dailyStats.energy, dailyStats.hunger, dailyStats.mood, dailyStats.sleep)}
-      </div>
 
-      <CockpitCard title="Daily Status // MAN.INPUT">
-         <div className="space-y-6 px-1">
-           {/* Energy Slider */}
-           <div className="space-y-2">
-             <div className="flex justify-between items-end">
-               <div className="flex items-center gap-2">
-                 <Zap className="w-4 h-4 text-primary" />
-                 <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Energy Reserve</span>
-               </div>
-               <span className="font-mono text-sm text-primary font-bold">{dailyStats.energy}%</span>
-             </div>
-             <SimpleSlider 
-               value={[dailyStats.energy]} 
-               onValueChange={([val]: any) => setDailyStats({...dailyStats, energy: val})}
-               max={100} 
-               trackColor="bg-primary"
-             />
-           </div>
+      <CockpitCard title="Physiological State">
+        <div className="space-y-6">
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-mono text-muted-foreground">ENERGY</label>
+              <span className="text-sm font-mono text-primary">{dailyStats.energy}%</span>
+            </div>
+            <SimpleSlider
+              value={[dailyStats.energy]}
+              onValueChange={(v: number[]) => handleStatChange('energy', v[0])}
+              max={100}
+              trackColor="bg-primary"
+            />
+          </div>
 
-           {/* Hunger Slider */}
-           <div className="space-y-2">
-             <div className="flex justify-between items-end">
-               <div className="flex items-center gap-2">
-                 <Utensils className="w-4 h-4 text-secondary" />
-                 <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Hunger Index</span>
-               </div>
-               <span className="font-mono text-sm text-secondary font-bold">{dailyStats.hunger}%</span>
-             </div>
-             <SimpleSlider 
-               value={[dailyStats.hunger]} 
-               onValueChange={([val]: any) => setDailyStats({...dailyStats, hunger: val})}
-               max={100} 
-               trackColor="bg-secondary"
-             />
-           </div>
-           
-           {/* Mood Selector */}
-           <div className="pt-4 border-t border-border/30 border-dashed">
-             <div className="flex items-center gap-2 mb-3">
-               <Radio className="w-4 h-4 text-muted-foreground" />
-               <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Subjective State</div>
-             </div>
-             
-             <div className="flex justify-between gap-2">
-               {[1, 2, 3, 4, 5].map((level) => (
-                 <button
-                   key={level}
-                   onClick={() => setDailyStats({...dailyStats, mood: level})}
-                   className={`flex-1 h-12 rounded-sm border relative overflow-hidden group transition-all ${
-                     dailyStats.mood === level 
-                       ? "bg-primary/10 border-primary shadow-[0_0_15px_rgba(46,204,113,0.15)]" 
-                       : "bg-card border-border hover:border-primary/50"
-                   }`}
-                 >
-                   {/* Scanline effect for active state */}
-                   {dailyStats.mood === level && (
-                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent animate-scan" />
-                   )}
-                   
-                   <div className={`flex flex-col items-center justify-center h-full relative z-10 font-mono ${dailyStats.mood === level ? 'text-primary' : 'text-muted-foreground'}`}>
-                     <span className="text-lg font-bold">{level}</span>
-                   </div>
-                 </button>
-               ))}
-             </div>
-             <div className="flex justify-between text-[9px] text-muted-foreground mt-1 px-1 font-mono uppercase tracking-widest opacity-60">
-               <span>Fatigued</span>
-               <span>Optimal</span>
-             </div>
-           </div>
-         </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-mono text-muted-foreground">HUNGER</label>
+              <span className="text-sm font-mono text-secondary">{dailyStats.hunger}%</span>
+            </div>
+            <SimpleSlider
+              value={[dailyStats.hunger]}
+              onValueChange={(v: number[]) => handleStatChange('hunger', v[0])}
+              max={100}
+              trackColor="bg-secondary"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-sm font-mono text-muted-foreground">MOOD</label>
+              <span className="text-sm font-mono text-blue-400">
+                {['😴', '😔', '😐', '🙂', '😊'][dailyStats.mood - 1] || '😐'}
+              </span>
+            </div>
+            <div className="flex gap-2 justify-between">
+              {[1, 2, 3, 4, 5].map((level) => (
+                <button
+                  key={level}
+                  onClick={() => handleStatChange('mood', level)}
+                  data-testid={`mood-${level}`}
+                  className={`flex-1 h-10 rounded-lg border-2 transition-all font-mono text-sm ${
+                    dailyStats.mood === level 
+                      ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
+                      : 'bg-muted/10 border-border hover:border-blue-500/50'
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </CockpitCard>
 
-      <div className="bg-card border border-border rounded-2xl p-4 relative overflow-hidden">
-        {/* Decorative background grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:10px_10px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
-        
-        <div className="flex justify-between items-center mb-3 relative z-10">
-          <h3 className="font-mono text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <span className="w-2 h-2 bg-primary/50 rounded-full animate-pulse" />
-            Active Configuration
-          </h3>
-          <span className="text-[10px] font-mono text-primary border border-primary/30 px-1 rounded">V.1.0</span>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-2 text-xs font-mono relative z-10">
-           <div className="bg-muted/10 p-2 border border-border/50">
-             <div className="text-muted-foreground mb-1 text-[9px]">PROFILE</div>
-             <div className="text-primary truncate">{profile.goal.toUpperCase()}</div>
-           </div>
-           <div className="bg-muted/10 p-2 border border-border/50">
-             <div className="text-muted-foreground mb-1 text-[9px]">ACT.LVL</div>
-             <div className="text-foreground truncate">{profile.activityLevel.substring(0, 8).toUpperCase()}</div>
-           </div>
-           <div className="bg-muted/10 p-2 border border-border/50">
-             <div className="text-muted-foreground mb-1 text-[9px]">HGT.REF</div>
-             <div className="text-foreground">{profile.height}CM</div>
-           </div>
-        </div>
-        
-        <Link href="/profile">
-          <Button variant="ghost" className="w-full mt-3 text-[10px] font-mono h-8 border border-primary/20 hover:bg-primary/5 hover:border-primary/50 text-primary uppercase tracking-widest relative z-10">
-            Re-Calibrate Parameters
-          </Button>
-        </Link>
-      </div>
+      {getAdvice(dailyStats.energy, dailyStats.hunger, dailyStats.mood, dailyStats.sleep)}
 
-      {/* Chart */}
-      <CockpitCard title="Trend Analysis // 7-DAY" className="h-64">
-        <div className="h-full w-full pt-4 -ml-4">
+      <CockpitCard title="Weekly Trend">
+        <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={LOG_DATA}>
+            <AreaChart data={LOG_DATA} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(142, 70%, 45%)" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="hsl(142, 70%, 45%)" stopOpacity={0}/>
+                <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 22%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
               <XAxis 
                 dataKey="day" 
-                stroke="hsl(215, 15%, 60%)" 
-                fontSize={10} 
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'monospace' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
                 tickLine={false}
-                axisLine={false}
-                fontFamily="JetBrains Mono"
               />
               <YAxis 
-                domain={['auto', 'auto']} 
-                stroke="hsl(215, 15%, 60%)" 
-                fontSize={10} 
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'monospace' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
                 tickLine={false}
-                axisLine={false}
-                width={30}
-                fontFamily="JetBrains Mono"
+                domain={[0, 100]}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(220, 14%, 13%)', 
-                  borderColor: 'hsl(220, 14%, 22%)',
-                  borderRadius: '2px',
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: '12px',
-                  textTransform: 'uppercase'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  fontFamily: 'monospace',
+                  fontSize: '12px'
                 }}
-                itemStyle={{ color: 'hsl(142, 70%, 45%)' }}
-                cursor={{ stroke: 'hsl(142, 70%, 45%)', strokeWidth: 1, strokeDasharray: '4 4' }}
               />
               <Area 
                 type="monotone" 
-                dataKey="weight" 
-                stroke="hsl(142, 70%, 45%)" 
-                fillOpacity={1} 
-                fill="url(#colorWeight)" 
+                dataKey="energy" 
+                stroke="hsl(var(--primary))" 
                 strokeWidth={2}
+                fill="url(#energyGrad)" 
               />
             </AreaChart>
           </ResponsiveContainer>

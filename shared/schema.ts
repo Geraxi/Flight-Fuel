@@ -131,3 +131,21 @@ export const insertDailyChecklistSchema = createInsertSchema(dailyChecklists).om
 
 export type InsertDailyChecklist = z.infer<typeof insertDailyChecklistSchema>;
 export type DailyChecklist = typeof dailyChecklists.$inferSelect;
+
+// Daily health logs table
+export const dailyHealthLogs = pgTable("daily_health_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  energy: integer("energy").notNull().default(50),
+  hunger: integer("hunger").notNull().default(50),
+  mood: integer("mood").notNull().default(3),
+  sleep: integer("sleep").notNull().default(7),
+});
+
+export const insertDailyHealthLogSchema = createInsertSchema(dailyHealthLogs).omit({
+  id: true,
+});
+
+export type InsertDailyHealthLog = z.infer<typeof insertDailyHealthLogSchema>;
+export type DailyHealthLog = typeof dailyHealthLogs.$inferSelect;

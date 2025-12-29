@@ -8,6 +8,7 @@ import {
   insertTrainingSessionSchema,
   insertUserProfileSchema,
   insertDailyChecklistSchema,
+  insertDailyHealthLogSchema,
 } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { stripeService } from "./stripeService";
@@ -310,6 +311,37 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Checklist item not found" });
       }
       res.json(checklist);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Health log routes
+  app.get("/api/health/:date", requireAuth(), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const log = await storage.getDailyHealthLog(userId, req.params.date);
+      res.json(log || { energy: 50, hunger: 50, mood: 3, sleep: 7 });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/health", requireAuth(), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const result = insertDailyHealthLogSchema.safeParse({ ...req.body, userId });
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+      const log = await storage.upsertDailyHealthLog(result.data);
+      res.json(log);
     } catch (error) {
       next(error);
     }

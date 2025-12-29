@@ -6,6 +6,7 @@ import {
   nutritionLogs,
   trainingSessions,
   dailyChecklists,
+  dailyHealthLogs,
   type User, 
   type InsertUser,
   type UserProfile,
@@ -18,6 +19,8 @@ import {
   type InsertTrainingSession,
   type DailyChecklist,
   type InsertDailyChecklist,
+  type DailyHealthLog,
+  type InsertDailyHealthLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -72,6 +75,10 @@ export interface IStorage {
   createDailyChecklist(checklist: InsertDailyChecklist): Promise<DailyChecklist>;
   updateDailyChecklist(id: string, status: string, value?: string): Promise<DailyChecklist | undefined>;
   deleteDailyChecklists(userId: string, date: string): Promise<void>;
+
+  // Health log methods
+  getDailyHealthLog(userId: string, date: string): Promise<DailyHealthLog | undefined>;
+  upsertDailyHealthLog(log: InsertDailyHealthLog): Promise<DailyHealthLog>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -347,6 +354,31 @@ export class DatabaseStorage implements IStorage {
     await db.delete(dailyChecklists).where(
       and(eq(dailyChecklists.userId, userId), eq(dailyChecklists.date, date))
     );
+  }
+
+  // Health log methods
+  async getDailyHealthLog(userId: string, date: string): Promise<DailyHealthLog | undefined> {
+    const [log] = await db.select().from(dailyHealthLogs).where(
+      and(eq(dailyHealthLogs.userId, userId), eq(dailyHealthLogs.date, date))
+    );
+    return log || undefined;
+  }
+
+  async upsertDailyHealthLog(log: InsertDailyHealthLog): Promise<DailyHealthLog> {
+    const existing = await this.getDailyHealthLog(log.userId, log.date);
+    if (existing) {
+      const [updated] = await db
+        .update(dailyHealthLogs)
+        .set({ energy: log.energy, hunger: log.hunger, mood: log.mood, sleep: log.sleep })
+        .where(eq(dailyHealthLogs.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [newLog] = await db
+      .insert(dailyHealthLogs)
+      .values(log)
+      .returning();
+    return newLog;
   }
 }
 
