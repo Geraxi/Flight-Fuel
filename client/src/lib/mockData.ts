@@ -1,17 +1,17 @@
 import { LucideIcon } from "lucide-react";
 
-import oatmealImg from "@assets/stock_images/oatmeal_with_berries_7826eb07.jpg";
-import yogurtImg from "@assets/stock_images/greek_yogurt_bowl_wi_cf0a36ea.jpg";
-import shakeImg from "@assets/stock_images/protein_shake_with_b_433a5a18.jpg";
-import wrapImg from "@assets/stock_images/healthy_turkey_wrap__9f571f63.jpg";
-import barImg from "@assets/stock_images/protein_bar_and_almo_5da18025.jpg";
-import hardBoiledImg from "@assets/stock_images/hard_boiled_eggs_ric_cea3b8d6.jpg";
-import chickenImg from "@assets/stock_images/grilled_chicken_brea_2e1b9e35.jpg";
-import fishImg from "@assets/stock_images/white_fish_quinoa_as_116aa808.jpg";
-import pastaImg from "@assets/stock_images/chickpea_pasta_tomat_a3a4fccc.jpg";
-import caseinImg from "@assets/stock_images/casein_protein_shake_b37068ad.jpg";
-import cottageImg from "@assets/stock_images/cottage_cheese_almon_8569c9c4.jpg";
-import teaImg from "@assets/stock_images/greek_yogurt_chamomi_2b4e6c38.jpg";
+import eggsOatmealImg from "@assets/stock_images/scrambled_eggs_with__98003d56.jpg";
+import yogurtImg from "@assets/stock_images/greek_yogurt_parfait_637aa08f.jpg";
+import shakeImg from "@assets/stock_images/banana_peanut_butter_5e147e58.jpg";
+import wrapImg from "@assets/stock_images/healthy_turkey_avoca_c4dd722a.jpg";
+import barImg from "@assets/stock_images/protein_energy_bar_w_74cb00d4.jpg";
+import hardBoiledImg from "@assets/stock_images/hard_boiled_eggs_wit_4720a766.jpg";
+import chickenImg from "@assets/stock_images/grilled_chicken_brea_51f637cc.jpg";
+import fishImg from "@assets/stock_images/baked_white_fish_fil_1006732d.jpg";
+import pastaImg from "@assets/stock_images/pasta_with_tomato_me_ec48cde6.jpg";
+import caseinImg from "@assets/stock_images/chocolate_casein_pro_6fbca537.jpg";
+import cottageImg from "@assets/stock_images/cottage_cheese_bowl__1ad529bd.jpg";
+import teaImg from "@assets/stock_images/greek_yogurt_with_ch_9082d5e9.jpg";
 
 export interface FlightSegment {
   id: string;
@@ -92,7 +92,7 @@ export const PLAN_PHASES = [
     icon: "Coffee",
     macros: { protein: 30, carbs: 40, fat: 15 },
     foodEquivalents: [
-      { name: "Eggs (3 whole) + Oats (50g dry) + Berries (1 cup)", image: oatmealImg },
+      { name: "Eggs (3 whole) + Oats (50g dry) + Berries (1 cup)", image: eggsOatmealImg },
       { name: "Greek Yogurt (200g) + Honey (1 tbsp) + Walnuts (30g)", image: yogurtImg },
       { name: "Protein Shake (1 scoop) + Banana + Peanut Butter (1 tbsp)", image: shakeImg }
     ]
