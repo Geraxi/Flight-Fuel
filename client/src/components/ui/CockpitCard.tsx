@@ -26,39 +26,19 @@ export function CockpitCard({
     <div 
       className={cn(
         panelClass,
-        "flex flex-col glass-reflection", 
-        status === "amber" && "border-secondary/50",
-        status === "cyan" && "border-[hsl(195,100%,50%)]/50",
+        "flex flex-col", 
         className
       )} 
       {...props}
     >
       {title && (
-        <div className={cn(
-          "cockpit-header",
-          variant === "instrument" && "rounded-t-xl"
-        )}>
-          <span className={cn(
-            "cockpit-label",
-            status === "amber" && "text-secondary text-shadow-amber",
-            status === "cyan" && "text-[hsl(195,100%,55%)] text-shadow-cyan"
-          )}>
+        <div className="cockpit-header">
+          <span className="cockpit-label">
             {title}
           </span>
-          {status !== "normal" && (
-            <div className={cn(
-              "status-led",
-              status === "amber" && "amber",
-              status === "warning" && "red",
-              status === "cyan" && "green"
-            )} />
-          )}
         </div>
       )}
-      <div className={cn(
-        "p-4 flex-1",
-        variant === "pfd" && "p-3"
-      )}>
+      <div className="p-5 flex-1">
         {children}
       </div>
     </div>

@@ -383,7 +383,7 @@ export default function Plan() {
        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
              <div className="bg-primary/10 p-2 rounded-full">
-                <Plane className="w-4 h-4 text-primary" />
+                <Plane className="w-5 h-5 text-primary" strokeWidth={2} />
              </div>
              <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider">Active Sector</h3>
@@ -401,7 +401,7 @@ export default function Plan() {
              </div>
              
              <div className="pb-2 text-muted-foreground">
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" strokeWidth={2} />
              </div>
              
              <div className="space-y-1.5 w-full">
@@ -414,14 +414,14 @@ export default function Plan() {
           </div>
           
           <Button onClick={calculateFlight} className="w-full font-mono text-xs tracking-wider mb-2" size="sm">
-             <Activity className="w-3 h-3 mr-2" /> CALCULATE PROFILE
+             <Activity className="w-4 h-4 mr-2" strokeWidth={2} /> CALCULATE PROFILE
           </Button>
 
           {isCalculated && (
              <div className="mt-3 pt-3 border-t border-border flex justify-between items-center animate-in fade-in slide-in-from-top-2">
                 <div className="text-xs text-muted-foreground font-mono">EST. FLIGHT TIME</div>
                 <div className="text-lg font-bold font-mono text-primary flex items-center gap-2">
-                   <Clock className="w-4 h-4" />
+                   <Clock className="w-5 h-5" strokeWidth={2} />
                    {flightTime}
                 </div>
              </div>
@@ -443,7 +443,7 @@ export default function Plan() {
                 "absolute -left-[41px] top-0 w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center z-10",
                 index === 1 ? "border-primary text-primary shadow-[0_0_10px_rgba(46,204,113,0.3)]" : "text-muted-foreground"
               )}>
-                <Icon size={14} />
+                <Icon size={16} strokeWidth={2} />
               </div>
 
               {/* Content Card */}
@@ -503,7 +503,7 @@ export default function Plan() {
                     onClick={() => toggleVariation(index, variationCount)}
                     className="h-6 px-2 text-[10px] font-mono text-primary hover:text-primary hover:bg-primary/10 mt-2"
                   >
-                    <RefreshCw className="w-3 h-3 mr-1" />
+                    <RefreshCw className="w-4 h-4 mr-1" strokeWidth={2} />
                     SWAP OPTION ({currentVariation + 1}/{variationCount})
                   </Button>
                  )}
@@ -521,7 +521,7 @@ export default function Plan() {
       <div className="relative mt-4">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0e1a]/80 to-[#0a0e1a] z-10 flex flex-col items-center justify-center p-6 rounded-lg">
           <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 p-4 rounded-full mb-4 border border-amber-500/30">
-            <Lock className="w-8 h-8 text-amber-400" />
+            <Lock className="w-10 h-10 text-amber-400" strokeWidth={2} />
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">Premium Feature</h3>
           <p className="text-cyan-400/70 text-sm text-center mb-4">
@@ -532,7 +532,7 @@ export default function Plan() {
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all"
             data-testid="button-upgrade-nutrition"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-5 h-5" strokeWidth={2} fill="currentColor" />
             Upgrade to Premium
           </button>
         </div>
@@ -540,7 +540,7 @@ export default function Plan() {
           {[1, 2, 3, 4].map((_, index) => (
             <div key={index} className="relative">
               <div className="absolute -left-[41px] top-0 w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center">
-                <Utensils size={14} className="text-muted-foreground" />
+                <Utensils size={16} className="text-muted-foreground" strokeWidth={2} />
               </div>
               <div className="cockpit-panel p-4">
                 <div className="h-4 w-24 bg-muted/30 rounded mb-2 animate-pulse" />
@@ -615,8 +615,8 @@ export default function Plan() {
               )}>
                 {format(day, 'd')}
               </span>
-              {status === "duty" && <Plane className="w-3 h-3 opacity-70" />}
-              {status === "rest" && <Coffee className="w-3 h-3 opacity-70" />}
+              {status === "duty" && <Plane className="w-4 h-4 opacity-70" strokeWidth={2} />}
+              {status === "rest" && <Coffee className="w-4 h-4 opacity-70" strokeWidth={2} />}
             </div>
             
             <div className="flex items-end justify-between w-full z-10">
@@ -661,7 +661,7 @@ export default function Plan() {
         <TabsContent value="daily">
           <div className="flex justify-between items-center mb-4 bg-card border border-border p-3 rounded-md">
              <div className="flex items-center gap-2">
-               <CalendarIcon className="w-4 h-4 text-primary" />
+               <CalendarIcon className="w-5 h-5 text-primary" strokeWidth={2} />
                <span className="font-mono text-sm">{format(currentDate, "EEEE, d MMM yyyy").toUpperCase()}</span>
              </div>
              <div className="flex items-center gap-2">
@@ -721,7 +721,7 @@ export default function Plan() {
               end: endOfMonth(currentDate)
             })} />
              <div className="bg-muted/10 p-3 rounded border border-border text-xs text-muted-foreground font-mono flex gap-2 items-center">
-              <Activity className="w-4 h-4" />
+              <Activity className="w-5 h-5" strokeWidth={2} />
               <p>Colors indicate performance score (Energy/Sleep/Mood).</p>
             </div>
           </div>
@@ -762,7 +762,7 @@ export default function Plan() {
                         <div className="flex items-center justify-between">
                             <Label>Scheduled Sectors</Label>
                             <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addSegment}>
-                                <Plus className="w-3 h-3 mr-1" /> Add Sector
+                                <Plus className="w-4 h-4 mr-1" strokeWidth={2.5} /> Add Sector
                             </Button>
                         </div>
                         
@@ -780,7 +780,7 @@ export default function Plan() {
                                     className="absolute top-2 right-2 h-6 w-6 opacity-50 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
                                     onClick={() => removeSegment(index)}
                                 >
-                                    <X className="w-4 h-4" />
+                                    <X className="w-5 h-5" strokeWidth={2} />
                                 </Button>
                                 
                                 <div className="grid grid-cols-3 gap-2">
@@ -822,7 +822,7 @@ export default function Plan() {
                                         />
                                      </div>
                                      <div className="pb-2 text-muted-foreground">
-                                        <ArrowRight className="w-3 h-3" />
+                                        <ArrowRight className="w-4 h-4" strokeWidth={2} />
                                      </div>
                                      <div className="space-y-1 w-full">
                                         <AirportSelect 
@@ -839,7 +839,7 @@ export default function Plan() {
                  
                  {editingSchedule.status === "rest" && (
                      <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4 text-center">
-                         <Coffee className="w-8 h-8 text-secondary mx-auto mb-2 opacity-50" />
+                         <Coffee className="w-10 h-10 text-secondary mx-auto mb-2 opacity-50" strokeWidth={2} />
                          <h4 className="text-sm font-bold text-secondary">Rest Period</h4>
                          <p className="text-xs text-muted-foreground mt-1">
                              Focus on recovery, sleep hygiene, and nutrition.

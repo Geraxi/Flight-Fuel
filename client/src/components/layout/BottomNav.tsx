@@ -14,38 +14,33 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
-      <div className="mx-2 mb-2 rounded-2xl overflow-hidden" style={{
-        background: 'linear-gradient(180deg, hsl(222 18% 14%), hsl(222 18% 10%))',
-        border: '1px solid hsl(222 18% 22%)',
-        boxShadow: '0 -4px 24px hsla(0, 0%, 0%, 0.5), inset 0 1px 0 hsla(0, 0%, 100%, 0.03)'
-      }}>
-        <div className="flex justify-around items-stretch">
-          {navItems.map((item) => {
-            const isActive = location === item.href;
-            return (
-              <Link key={item.href} href={item.href}>
-                <div className={cn("nav-button cursor-pointer min-w-[56px]", isActive && "active")}>
-                  <item.icon
-                    size={20}
-                    className={cn(
-                      "transition-all duration-300 relative z-10",
-                      isActive 
-                        ? "text-primary drop-shadow-[0_0_8px_hsla(142,76%,48%,0.6)]" 
-                        : "text-muted-foreground"
-                    )}
-                  />
-                  <span className={cn(
-                    "text-[9px] font-mono tracking-[0.1em] uppercase relative z-10 transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  )}>
-                    {item.label}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe bg-background/80 backdrop-blur-xl border-t border-border/50">
+      <div className="flex justify-around items-stretch max-w-md mx-auto">
+        {navItems.map((item) => {
+          const isActive = location === item.href;
+          return (
+            <Link key={item.href} href={item.href}>
+              <div className={cn("nav-button cursor-pointer min-w-[60px]", isActive && "active")}>
+                <item.icon
+                  size={22}
+                  strokeWidth={2}
+                  className={cn(
+                    "transition-colors duration-200",
+                    isActive 
+                      ? "text-primary" 
+                      : "text-muted-foreground"
+                  )}
+                />
+                <span className={cn(
+                  "text-[10px] font-medium transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {item.label}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

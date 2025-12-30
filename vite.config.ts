@@ -40,6 +40,7 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
+  base: "./", // Required for Capacitor - use relative paths
   server: {
     host: "0.0.0.0",
     allowedHosts: true,

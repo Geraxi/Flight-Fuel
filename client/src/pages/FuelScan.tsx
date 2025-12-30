@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { calculateCalorieTargets, calculateDailyProgress, getCalorieStatus } from "@/lib/calories";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { nutritionApi } from "@/lib/api";
 import { usePremium } from "@/lib/premium";
 import { useLocation } from "wouter";
+import { calculateNutritionFromText, FOOD_DATABASE } from "@/lib/foodDatabase";
 import type { NutritionLog } from "@shared/schema";
 
 type ViewMode = "dashboard" | "camera" | "manual" | "result";
@@ -49,19 +50,23 @@ export default function FuelScan() {
 
   const { data: todayLogs = [] } = useQuery<NutritionLog[]>({
     queryKey: ["/api/nutrition", today],
-    queryFn: () => apiRequest("GET", `/api/nutrition?date=${today}`).then(res => res.json()),
+    queryFn: () => nutritionApi.getByDate(today),
   });
 
   const { data: summary = { calories: 0, protein: 0, carbs: 0, fat: 0 } } = useQuery({
     queryKey: ["/api/nutrition/summary", today],
-    queryFn: () => apiRequest("GET", `/api/nutrition/summary/${today}`).then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch(`/api/nutrition/summary/${today}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch summary");
+      return res.json();
+    },
   });
 
   const progress = calculateDailyProgress(targets, summary);
   const calorieStatus = getCalorieStatus(progress.percentComplete);
 
   const addNutritionMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/nutrition", data).then(res => res.json()),
+    mutationFn: (data: any) => nutritionApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition"] });
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition/summary"] });
@@ -70,10 +75,13 @@ export default function FuelScan() {
       setManualEntry({ name: "", calories: 0, protein: 0, carbs: 0, fat: 0 });
       setCapturedImage(null);
     },
+    onError: (error: any) => {
+      console.error("Error adding nutrition:", error);
+    },
   });
 
   const deleteNutritionMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/nutrition/${id}`),
+    mutationFn: (id: string) => nutritionApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition"] });
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition/summary"] });
@@ -125,12 +133,18 @@ export default function FuelScan() {
       const img = captureFrame();
       setCapturedImage(img);
       setScanning(false);
+      
+      // Try to calculate nutrition for scanned meal
+      const detectedName = "Mixed Meal";
+      const nutrition = calculateNutritionFromText(detectedName);
+      const defaultNutrition = { calories: 450, protein: 28, carbs: 45, fat: 18 };
+      
       setScannedFood({
-        name: "Mixed Meal",
-        calories: 450,
-        protein: 28,
-        carbs: 45,
-        fat: 18,
+        name: detectedName,
+        calories: nutrition.calories || defaultNutrition.calories,
+        protein: nutrition.protein || defaultNutrition.protein,
+        carbs: nutrition.carbs || defaultNutrition.carbs,
+        fat: nutrition.fat || defaultNutrition.fat,
       });
       setViewMode("result");
     }, 2000);
@@ -145,12 +159,28 @@ export default function FuelScan() {
         setScanning(true);
         setTimeout(() => {
           setScanning(false);
+          // Try to extract food name from filename or use default
+          const fileName = file.name.toLowerCase();
+          let detectedName = "Uploaded Meal";
+          
+          // Try to detect common food names from filename
+          for (const [foodName] of Object.entries(FOOD_DATABASE)) {
+            if (fileName.includes(foodName.toLowerCase())) {
+              detectedName = foodName;
+              break;
+            }
+          }
+          
+          // Calculate nutrition for detected or default meal
+          const nutrition = calculateNutritionFromText(detectedName);
+          const defaultNutrition = { calories: 520, protein: 32, carbs: 52, fat: 20 };
+          
           setScannedFood({
-            name: "Uploaded Meal",
-            calories: 520,
-            protein: 32,
-            carbs: 52,
-            fat: 20,
+            name: detectedName,
+            calories: nutrition.calories || defaultNutrition.calories,
+            protein: nutrition.protein || defaultNutrition.protein,
+            carbs: nutrition.carbs || defaultNutrition.carbs,
+            fat: nutrition.fat || defaultNutrition.fat,
           });
           setViewMode("result");
         }, 1500);
@@ -175,11 +205,11 @@ export default function FuelScan() {
       mealTime: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
       mealPhase: mealPhaseMap[mealType] || "Cruise/Duty",
       mealName: food.name,
-      imageUrl: capturedImage,
-      protein: food.protein,
-      carbs: food.carbs,
-      fat: food.fat,
-      calories: food.calories,
+      imageUrl: capturedImage || null,
+      protein: Math.round(food.protein) || 0,
+      carbs: Math.round(food.carbs) || 0,
+      fat: Math.round(food.fat) || 0,
+      calories: Math.round(food.calories) || 0,
     });
   };
 
@@ -481,8 +511,53 @@ export default function FuelScan() {
                 <label className="cockpit-label block mb-2">Food Name</label>
                 <Input
                   value={manualEntry.name}
-                  onChange={(e) => setManualEntry(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Grilled Chicken Salad"
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setManualEntry(prev => ({ ...prev, name }));
+                    
+                    // Auto-calculate nutrition for any food name input
+                    if (name.length > 2) {
+                      const nutrition = calculateNutritionFromText(name);
+                      // Only update if we found valid nutrition values
+                      if (nutrition.calories > 0 || nutrition.protein > 0 || nutrition.carbs > 0 || nutrition.fat > 0) {
+                        setManualEntry(prev => ({
+                          ...prev,
+                          name,
+                          calories: nutrition.calories,
+                          protein: nutrition.protein,
+                          carbs: nutrition.carbs,
+                          fat: nutrition.fat,
+                        }));
+                      }
+                    } else if (name.length === 0) {
+                      // Reset values when clearing
+                      setManualEntry(prev => ({
+                        ...prev,
+                        name: "",
+                        calories: 0,
+                        protein: 0,
+                        carbs: 0,
+                        fat: 0,
+                      }));
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Recalculate on blur to catch any missed calculations
+                    const name = e.target.value;
+                    if (name.length > 2) {
+                      const nutrition = calculateNutritionFromText(name);
+                      if (nutrition.calories > 0 || nutrition.protein > 0 || nutrition.carbs > 0 || nutrition.fat > 0) {
+                        setManualEntry(prev => ({
+                          ...prev,
+                          calories: nutrition.calories,
+                          protein: nutrition.protein,
+                          carbs: nutrition.carbs,
+                          fat: nutrition.fat,
+                        }));
+                      }
+                    }
+                  }}
+                  placeholder="e.g., 130g cous cous and 200g chicken"
                   className="font-mono"
                   data-testid="input-food-name"
                 />

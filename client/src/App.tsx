@@ -58,10 +58,8 @@ function AuthenticatedApp() {
 
   return (
     <div className="bg-background min-h-screen font-sans text-foreground">
-      <main className="p-4 pb-24 max-w-md mx-auto min-h-screen relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay z-0" />
-        
-        <div className="relative z-10 h-full">
+      <main className="px-5 py-6 pb-24 max-w-md mx-auto min-h-screen">
+        <div className="h-full">
           <Switch>
             <Route path="/" component={FlightDeck} />
             <Route path="/plan" component={Plan} />

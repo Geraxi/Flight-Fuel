@@ -70,21 +70,21 @@ export default function FlightDeck() {
 
   const getIcon = (iconName?: string) => {
     switch (iconName) {
-      case "Clock": return <Clock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
-      case "Droplets": return <Droplets className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
-      default: return <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />;
+      case "Clock": return <Clock className="w-5 h-5 text-muted-foreground shrink-0" strokeWidth={2} />;
+      case "Droplets": return <Droplets className="w-5 h-5 text-muted-foreground shrink-0" strokeWidth={2} />;
+      default: return <AlertTriangle className="w-5 h-5 text-muted-foreground shrink-0" strokeWidth={2} />;
     }
   };
 
   const getSupplementIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case "performance": return <Zap className="w-4 h-4 text-yellow-400" />;
-      case "health": return <Heart className="w-4 h-4 text-red-400" />;
-      case "immunity": return <Shield className="w-4 h-4 text-blue-400" />;
-      case "cognitive/power": return <Brain className="w-4 h-4 text-purple-400" />;
-      case "recovery": return <Dumbbell className="w-4 h-4 text-orange-400" />;
-      case "sleep support": return <Moon className="w-4 h-4 text-indigo-400" />;
-      default: return <Pill className="w-4 h-4 text-primary" />;
+      case "performance": return <Zap className="w-5 h-5 text-yellow-500" strokeWidth={2} />;
+      case "health": return <Heart className="w-5 h-5 text-red-500" strokeWidth={2} fill="currentColor" />;
+      case "immunity": return <Shield className="w-5 h-5 text-blue-500" strokeWidth={2} />;
+      case "cognitive/power": return <Brain className="w-5 h-5 text-purple-500" strokeWidth={2} />;
+      case "recovery": return <Dumbbell className="w-5 h-5 text-orange-500" strokeWidth={2} />;
+      case "sleep support": return <Moon className="w-5 h-5 text-indigo-500" strokeWidth={2} fill="currentColor" />;
+      default: return <Pill className="w-5 h-5 text-primary" strokeWidth={2} />;
     }
   };
 
@@ -93,92 +93,81 @@ export default function FlightDeck() {
   const checklistProgress = Math.round((completedCount / totalCount) * 100);
 
   return (
-    <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex justify-between items-center mb-6">
+    <div className="space-y-5 pb-24">
+      <header className="flex justify-between items-center pt-2 pb-1">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <Plane className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-[0.2em] text-foreground font-mono">FLIGHT DECK</h1>
-              <p className="text-[10px] text-muted-foreground font-mono tracking-wider">
-                SYS.READY <span className="text-primary">●</span> {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-foreground">Flight Deck</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
         </div>
         <Link href="/profile">
-          <div className="mfd-button cursor-pointer" data-testid="button-settings">
-            <Settings className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center cursor-pointer hover:bg-accent transition-colors" data-testid="button-settings">
+            <Settings className="w-5 h-5 text-foreground" strokeWidth={2} />
           </div>
         </Link>
       </header>
 
-      <CockpitCard title="Primary Flight Display" variant="instrument" status="cyan">
-        <div className="grid grid-cols-3 gap-4">
-          <InstrumentDisplay 
-            label="Duty Start" 
-            value={CURRENT_DUTY.dutyStart}
-            size="default"
-          />
-          <div className="flex flex-col items-center justify-center">
-            <GaugeRing 
-              value={checklistProgress} 
-              max={100} 
-              size={70}
-              label="Ready"
-              status={checklistProgress === 100 ? "normal" : checklistProgress > 50 ? "amber" : "warning"}
-            />
+      <CockpitCard title="Status Overview" variant="instrument">
+        <div className="space-y-6">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground mb-1.5">Duty Start</span>
+              <span className="text-xl font-semibold text-foreground">{CURRENT_DUTY.dutyStart}</span>
+            </div>
+            <div className="flex flex-col items-center justify-center">
+              <GaugeRing 
+                value={checklistProgress} 
+                max={100} 
+                size={60}
+                label="Ready"
+                status={checklistProgress === 100 ? "normal" : checklistProgress > 50 ? "amber" : "warning"}
+              />
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-xs text-muted-foreground mb-1.5">Goal</span>
+              <span className="text-xl font-semibold text-foreground">{userGoal}</span>
+            </div>
           </div>
-          <InstrumentDisplay 
-            label="Mode" 
-            value={userGoal.toUpperCase().slice(0, 8)}
-            size="default"
-          />
-        </div>
-        
-        <div className="h-px bg-border/50 my-4" />
-        
-        <div className="flex justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-muted-foreground" />
-            <span className="cockpit-label">Conditions</span>
+          
+          <div className="space-y-3 pt-2 border-t border-border/50">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2.5">
+                <Activity className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
+                <span className="text-sm text-muted-foreground">Conditions</span>
+              </div>
+              <span className="text-sm font-medium text-foreground">{CURRENT_DUTY.conditions}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
+                <span className="text-sm text-muted-foreground">Duty Type</span>
+              </div>
+              <span className="text-sm font-medium text-foreground">{CURRENT_DUTY.dutyType}</span>
+            </div>
           </div>
-          <Annunciator status={CURRENT_DUTY.conditions === "ISA" ? "green" : "amber"}>
-            {CURRENT_DUTY.conditions.toUpperCase()}
-          </Annunciator>
-        </div>
-        
-        <div className="flex justify-between items-center gap-4 mt-3">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="cockpit-label">Duty Type</span>
-          </div>
-          <Annunciator status="cyan">
-            {CURRENT_DUTY.dutyType.toUpperCase()}
-          </Annunciator>
         </div>
       </CockpitCard>
 
       {ADVISORIES.length > 0 && (
-        <CockpitCard title="Crew Alerting System" status="amber" variant="default">
-          <div className="space-y-4">
+        <CockpitCard title="Alerts" variant="default">
+          <div className="space-y-3">
             {ADVISORIES.map((adv) => (
-              <div key={adv.id} className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-3">
-                  <div className="status-led amber" />
-                  <div className="flex justify-between w-full items-center">
-                     <span className="font-mono text-sm text-secondary">{adv.message}</span>
-                     {adv.value !== undefined && (
-                        <span className="font-mono text-xs text-secondary/70">{adv.value}%</span>
-                     )}
+              <div key={adv.id} className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-sm text-foreground">{adv.message}</span>
                   </div>
+                  {adv.value !== undefined && (
+                    <span className="text-sm font-medium text-muted-foreground">{adv.value}%</span>
+                  )}
                 </div>
                 {adv.value !== undefined && (
-                   <div className="pl-6">
-                      <Progress value={(adv.value / (adv.maxValue || 100)) * 100} className="h-1.5 bg-secondary/20 [&>div]:bg-secondary" />
-                   </div>
+                  <div className="pl-4.5">
+                    <Progress value={(adv.value / (adv.maxValue || 100)) * 100} className="h-1.5 bg-muted [&>div]:bg-amber-500" />
+                  </div>
                 )}
               </div>
             ))}
@@ -186,58 +175,66 @@ export default function FlightDeck() {
         </CockpitCard>
       )}
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="cockpit-label">PRE-FLIGHT CHECKLIST</h3>
-          <span className="font-mono text-xs text-primary">{completedCount}/{totalCount}</span>
-        </div>
-        
-        {isLoading ? (
-          <div className="text-center py-4 text-muted-foreground text-sm">Loading checklist...</div>
-        ) : (
-          mergedChecklist.map((item) => (
-            <div 
-              key={item.id}
-              onClick={() => toggleChecklist(item)}
-              data-testid={`checklist-item-${item.id}`}
-              className="group flex items-center justify-between p-3 instrument-bezel hover:border-primary/50 transition-all cursor-pointer select-none"
-            >
-              <div className="flex items-center gap-3">
-                {item.status === "complete" ? (
-                  <div className="w-5 h-5 rounded-full bg-primary/20 border border-primary flex items-center justify-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+      <CockpitCard title="Pre-Flight Checklist" variant="default">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/50">
+            <h3 className="text-sm font-semibold text-foreground">Checklist</h3>
+            <span className="text-sm text-muted-foreground">{completedCount}/{totalCount}</span>
+          </div>
+          
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">Loading checklist...</div>
+          ) : (
+            mergedChecklist.map((item, index) => (
+              <div key={item.id}>
+                <div 
+                  onClick={() => toggleChecklist(item)}
+                  data-testid={`checklist-item-${item.id}`}
+                  className="group flex items-center justify-between py-3.5 px-1 hover:bg-accent/50 rounded-lg transition-colors cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    {item.status === "complete" ? (
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} fill="currentColor" />
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 rounded-full border-2 border-muted-foreground/40 group-hover:border-primary/60 transition-colors flex-shrink-0" />
+                  )}
+                    <span className="font-medium text-sm text-foreground">
+                      {item.label}
+                    </span>
                   </div>
-                ) : (
-                  <div className="w-5 h-5 rounded-full border border-muted-foreground/50 group-hover:border-primary/50 transition-colors" />
+                  {item.value && (
+                    <span className="text-sm text-muted-foreground ml-3">
+                      {item.value}
+                    </span>
+                  )}
+                </div>
+                {index < mergedChecklist.length - 1 && (
+                  <div className="h-px bg-border/50 ml-8" />
                 )}
-                <span className={`font-medium text-sm transition-colors ${item.status === "complete" ? "text-primary" : "text-foreground"}`}>
-                  {item.label}
-                </span>
               </div>
-              <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                {item.value}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      </CockpitCard>
 
-      <CockpitCard title="Supplement Protocol" variant="default">
-        <div className="space-y-3">
-          {SUPPLEMENT_STACK.map((supp) => (
-            <div key={supp.id} className="flex items-center justify-between border-b border-border/30 last:border-0 pb-3 last:pb-0">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg pfd-display flex items-center justify-center">
+      <CockpitCard title="Supplements" variant="default">
+        <div className="space-y-0">
+          {SUPPLEMENT_STACK.map((supp, index) => (
+            <div key={supp.id} className={`flex items-center justify-between py-4 ${index < SUPPLEMENT_STACK.length - 1 ? 'border-b border-border/50' : ''}`}>
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-11 h-11 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
                    {getSupplementIcon(supp.type)}
                 </div>
-                <div>
-                  <div className="font-medium text-sm">{supp.name}</div>
-                  <div className="text-[10px] text-muted-foreground font-mono tracking-wider">{supp.type.toUpperCase()}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-foreground">{supp.name}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{supp.type}</div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="font-mono text-sm lcd-text">{supp.dose}</div>
-                <div className="text-[10px] text-muted-foreground font-mono uppercase">{supp.timing}</div>
+              <div className="text-right ml-4">
+                <div className="font-semibold text-sm text-foreground">{supp.dose}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{supp.timing}</div>
               </div>
             </div>
           ))}

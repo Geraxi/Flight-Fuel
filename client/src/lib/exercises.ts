@@ -60,7 +60,7 @@ export const EXERCISE_DATABASE: ExerciseDef[] = [
     reps: "10", 
     rest: "-", 
     image: burpeeImg, 
-    youtubeId: "4R5uQN-xhKI",
+    youtubeId: "jAhjX4Oq-lM",
     description: "Do a push-up, at the top push shoulders further up rounding upper back. Activates serratus.",
     category: "warmup",
     isWarmup: true,

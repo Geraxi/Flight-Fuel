@@ -23,7 +23,7 @@ import {
   type InsertDailyHealthLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -78,6 +78,7 @@ export interface IStorage {
 
   // Health log methods
   getDailyHealthLog(userId: string, date: string): Promise<DailyHealthLog | undefined>;
+  getHealthLogsByDateRange(userId: string, startDate: string, endDate: string): Promise<DailyHealthLog[]>;
   upsertDailyHealthLog(log: InsertDailyHealthLog): Promise<DailyHealthLog>;
 }
 
@@ -364,12 +365,33 @@ export class DatabaseStorage implements IStorage {
     return log || undefined;
   }
 
+  async getHealthLogsByDateRange(userId: string, startDate: string, endDate: string): Promise<DailyHealthLog[]> {
+    const logs = await db
+      .select()
+      .from(dailyHealthLogs)
+      .where(
+        and(
+          eq(dailyHealthLogs.userId, userId),
+          gte(dailyHealthLogs.date, startDate),
+          lte(dailyHealthLogs.date, endDate)
+        )
+      )
+      .orderBy(dailyHealthLogs.date);
+    return logs;
+  }
+
   async upsertDailyHealthLog(log: InsertDailyHealthLog): Promise<DailyHealthLog> {
     const existing = await this.getDailyHealthLog(log.userId, log.date);
     if (existing) {
       const [updated] = await db
         .update(dailyHealthLogs)
-        .set({ energy: log.energy, hunger: log.hunger, mood: log.mood, sleep: log.sleep })
+        .set({ 
+          energy: log.energy, 
+          hunger: log.hunger, 
+          mood: log.mood, 
+          sleep: log.sleep,
+          weight: log.weight ?? undefined
+        })
         .where(eq(dailyHealthLogs.id, existing.id))
         .returning();
       return updated;

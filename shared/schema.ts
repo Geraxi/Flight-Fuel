@@ -141,6 +141,7 @@ export const dailyHealthLogs = pgTable("daily_health_logs", {
   hunger: integer("hunger").notNull().default(50),
   mood: integer("mood").notNull().default(3),
   sleep: integer("sleep").notNull().default(7),
+  weight: integer("weight"), // in kg, optional
 });
 
 export const insertDailyHealthLogSchema = createInsertSchema(dailyHealthLogs).omit({

@@ -167,7 +167,8 @@ export default function Log() {
     energy: 50,
     hunger: 50,
     mood: 3,
-    sleep: 7
+    sleep: 7,
+    weight: profile?.weight ?? undefined as number | undefined
   });
 
   useEffect(() => {
@@ -177,19 +178,39 @@ export default function Log() {
         hunger: healthLog.hunger ?? 50,
         mood: healthLog.mood ?? 3,
         sleep: healthLog.sleep ?? 7,
+        weight: healthLog.weight ?? profile?.weight ?? undefined,
       });
     }
-  }, [healthLog]);
+  }, [healthLog, profile]);
 
   const updateHealthMutation = useMutation({
     mutationFn: (data: typeof dailyStats) => 
-      apiRequest("POST", "/api/health", { ...data, date: today }).then(res => res.json()),
+      apiRequest("POST", "/api/health", { 
+        energy: data.energy,
+        hunger: data.hunger,
+        mood: data.mood,
+        sleep: data.sleep,
+        weight: data.weight,
+        date: today 
+      }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/health", today] });
+      queryClient.invalidateQueries({ queryKey: ["/api/health/range"] });
     },
   });
 
-  const handleStatChange = (field: keyof typeof dailyStats, value: number) => {
+  // Get weekly health logs for trend chart
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 6); // Last 7 days
+  const endDate = new Date().toISOString().split("T")[0];
+  const weekStartDate = startDate.toISOString().split("T")[0];
+
+  const { data: weeklyLogs = [] } = useQuery({
+    queryKey: ["/api/health/range", weekStartDate, endDate],
+    queryFn: () => apiRequest("GET", `/api/health/range/${weekStartDate}/${endDate}`).then(res => res.json()),
+  });
+
+  const handleStatChange = (field: keyof typeof dailyStats, value: number | undefined) => {
     const newStats = { ...dailyStats, [field]: value };
     setDailyStats(newStats);
     updateHealthMutation.mutate(newStats);
@@ -215,11 +236,6 @@ export default function Log() {
       
       <div className="flex justify-end mb-4">
          <div className="flex gap-2">
-            <Link href="/progress">
-               <Button variant="outline" size="sm" className="h-7 font-mono text-[10px] border-secondary/30 text-secondary hover:bg-secondary/10 uppercase tracking-wider">
-                 <Settings className="w-3 h-3 mr-2" /> Visual Analysis
-               </Button>
-            </Link>
             <Link href="/profile">
               <Button variant="outline" size="sm" className="h-7 font-mono text-[10px] border-primary/30 text-primary hover:bg-primary/10 uppercase tracking-wider">
                 <Settings className="w-3 h-3 mr-2" /> Sys Config
@@ -236,10 +252,18 @@ export default function Log() {
               <Scale className="w-3 h-3 text-muted-foreground" />
               <div className="text-[8px] font-mono text-muted-foreground uppercase">WGT.LOAD</div>
             </div>
-            <div className="relative">
-              <div className="text-xl font-mono font-bold text-center text-foreground">
-                {profile?.weight || "--"}
-              </div>
+            <div className="relative w-full">
+              <Input 
+                type="number" 
+                className="text-xl font-mono font-bold text-center border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-foreground w-full" 
+                value={dailyStats.weight ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value === "" ? undefined : Number(e.target.value);
+                  handleStatChange('weight', value);
+                }}
+                placeholder={profile?.weight?.toString() || "--"}
+                data-testid="input-weight"
+              />
             </div>
             <div className="text-[10px] text-muted-foreground font-mono mt-1">KG</div>
           </div>
@@ -335,44 +359,159 @@ export default function Log() {
 
       {getAdvice(dailyStats.energy, dailyStats.hunger, dailyStats.mood, dailyStats.sleep)}
 
-      <CockpitCard title="Weekly Trend">
-        <div className="h-40">
+      <CockpitCard title="Energy Trend">
+        <div className="h-48 -mx-1">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={LOG_DATA} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={LOG_DATA} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <defs>
                 <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  <stop offset="0%" stopColor="hsl(142 76% 48%)" stopOpacity={0.4}/>
+                  <stop offset="100%" stopColor="hsl(142 76% 48%)" stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="hsl(var(--border))" 
+                opacity={0.2}
+                vertical={false}
+              />
               <XAxis 
                 dataKey="day" 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'monospace' }}
-                axisLine={{ stroke: 'hsl(var(--border))' }}
+                tick={{ 
+                  fill: 'hsl(180 20% 75%)', 
+                  fontSize: 12, 
+                  fontWeight: 500,
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif'
+                }}
+                axisLine={false}
                 tickLine={false}
+                tickMargin={10}
               />
               <YAxis 
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontFamily: 'monospace' }}
-                axisLine={{ stroke: 'hsl(var(--border))' }}
+                tick={{ 
+                  fill: 'hsl(180 20% 75%)', 
+                  fontSize: 12,
+                  fontWeight: 500,
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif'
+                }}
+                axisLine={false}
                 tickLine={false}
+                tickMargin={10}
                 domain={[0, 100]}
+                width={40}
               />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))', 
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontFamily: 'monospace',
-                  fontSize: '12px'
+                  borderRadius: '12px',
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
+                  fontSize: '13px',
+                  padding: '8px 12px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                 }}
+                cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '5 5' }}
               />
               <Area 
                 type="monotone" 
                 dataKey="energy" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={2}
-                fill="url(#energyGrad)" 
+                stroke="hsl(142 76% 48%)" 
+                strokeWidth={2.5}
+                fill="url(#energyGrad)"
+                dot={false}
+                activeDot={{ r: 4, fill: 'hsl(142 76% 48%)', strokeWidth: 2, stroke: 'hsl(var(--card))' }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </CockpitCard>
+
+      <CockpitCard title="Weight Trend">
+        <div className="h-48 -mx-1">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart 
+              data={(() => {
+                // Generate chart data from weekly logs, filling in missing days
+                const chartData = [];
+                const weightMap = new Map(weeklyLogs.map((log: any) => [log.date, log.weight]));
+                const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                
+                for (let i = 6; i >= 0; i--) {
+                  const date = new Date();
+                  date.setDate(date.getDate() - i);
+                  const dateStr = date.toISOString().split("T")[0];
+                  const dayIndex = date.getDay();
+                  const weight = weightMap.get(dateStr);
+                  
+                  chartData.push({
+                    day: dayNames[dayIndex],
+                    weight: weight ?? null
+                  });
+                }
+                return chartData;
+              })()} 
+              margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+            >
+              <defs>
+                <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(195 100% 50%)" stopOpacity={0.4}/>
+                  <stop offset="100%" stopColor="hsl(195 100% 50%)" stopOpacity={0.05}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="hsl(var(--border))" 
+                opacity={0.2}
+                vertical={false}
+              />
+              <XAxis 
+                dataKey="day" 
+                tick={{ 
+                  fill: 'hsl(180 20% 75%)', 
+                  fontSize: 12, 
+                  fontWeight: 500,
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif'
+                }}
+                axisLine={false}
+                tickLine={false}
+                tickMargin={10}
+              />
+              <YAxis 
+                tick={{ 
+                  fill: 'hsl(180 20% 75%)', 
+                  fontSize: 12,
+                  fontWeight: 500,
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif'
+                }}
+                axisLine={false}
+                tickLine={false}
+                tickMargin={10}
+                width={50}
+                domain={['dataMin - 1', 'dataMax + 1']}
+                tickFormatter={(value) => `${value}kg`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '12px',
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
+                  fontSize: '13px',
+                  padding: '8px 12px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                }}
+                formatter={(value: any) => value !== null ? `${value} kg` : 'No data'}
+                cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '5 5' }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="weight" 
+                stroke="hsl(195 100% 50%)" 
+                strokeWidth={2.5}
+                fill="url(#weightGrad)"
+                dot={{ r: 3, fill: 'hsl(195 100% 50%)', strokeWidth: 2, stroke: 'hsl(var(--card))' }}
+                activeDot={{ r: 5, fill: 'hsl(195 100% 50%)', strokeWidth: 2, stroke: 'hsl(var(--card))' }}
+                connectNulls={false}
               />
             </AreaChart>
           </ResponsiveContainer>

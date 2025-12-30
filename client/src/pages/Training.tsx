@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { CockpitCard } from "@/components/ui/CockpitCard";
+import { CockpitCard, Annunciator } from "@/components/ui/CockpitCard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, FileText, Edit2, Play, Info, Lock, Sparkles } from "lucide-react";
+import { Dumbbell, RefreshCw, Timer, Calendar, Activity, CheckCircle2, Save, FileText, Edit2, Play, Info, Lock, Sparkles, Camera, Upload, ScanLine, Scale, Zap, User, ArrowRight, Brain } from "lucide-react";
 import { usePremium } from "@/lib/premium";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type TrainingPreferences = {
   experience: "Beginner" | "Intermediate" | "Advanced";
@@ -54,11 +64,20 @@ type WorkoutSession = {
   completed: boolean;
 };
 
+type BodyScanViewMode = "scan" | "results";
+
 export default function Training() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const { isPremium } = usePremium();
   const [, setLocation] = useLocation();
+
+  // Body Scan State
+  const [bodyScanViewMode, setBodyScanViewMode] = useState<BodyScanViewMode | null>(null);
+  const [beforeImage, setBeforeImage] = useState<string | null>(null);
+  const [afterImage, setAfterImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
 
   const [prefs, setPrefs] = useState<TrainingPreferences>({
     experience: "Intermediate",
@@ -93,6 +112,10 @@ export default function Training() {
 
   const [generatedPlan, setGeneratedPlan] = useState<WorkoutSession[] | null>(null);
   const [swappedExercises, setSwappedExercises] = useState<Record<string, string>>({});
+  const [activeSessionIndex, setActiveSessionIndex] = useState<number | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [pendingSessionIndex, setPendingSessionIndex] = useState<number | null>(null);
 
   const createExerciseLog = (ex: ExerciseDef): ExerciseLog => {
     const isCardio = ex.isCardio || false;
@@ -296,6 +319,55 @@ export default function Training() {
       setGeneratedPlan(newPlan);
   };
 
+  // Timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (sessionStartTime !== null) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - sessionStartTime) / 1000));
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [sessionStartTime]);
+
+  const formatTime = (seconds: number): string => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const confirmStartSession = (sessionIndex: number) => {
+    setPendingSessionIndex(sessionIndex);
+  };
+
+  const startSession = (sessionIndex: number) => {
+    setActiveSessionIndex(sessionIndex);
+    setSessionStartTime(Date.now());
+    setElapsedTime(0);
+    setPendingSessionIndex(null);
+  };
+
+  const endSession = (sessionIndex: number) => {
+    if (!generatedPlan) return;
+    const newPlan = [...generatedPlan];
+    newPlan[sessionIndex].completed = true;
+    setGeneratedPlan(newPlan);
+    setActiveSessionIndex(null);
+    setSessionStartTime(null);
+    setElapsedTime(0);
+
+    toast({
+      title: "Session Completed",
+      description: `Workout for Day ${newPlan[sessionIndex].day} saved successfully.`
+    });
+  };
+
   const saveSession = (sessionIndex: number) => {
       if (!generatedPlan) return;
       const newPlan = [...generatedPlan];
@@ -307,6 +379,51 @@ export default function Training() {
           description: `Workout for Day ${newPlan[sessionIndex].day} saved successfully.`
       });
   };
+
+  // Body Scan Functions
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === 'before') setBeforeImage(reader.result as string);
+        else setAfterImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const startAnalysis = () => {
+    if (!beforeImage || !afterImage) return;
+    
+    setIsAnalyzing(true);
+    
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      setAnalysisComplete(true);
+      setBodyScanViewMode('results');
+    }, 3000);
+  };
+
+  const resetBodyScan = () => {
+    setBeforeImage(null);
+    setAfterImage(null);
+    setAnalysisComplete(false);
+    setBodyScanViewMode(null);
+  };
+
+  const AnalysisOverlay = () => (
+    <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-xl">
+      <div className="absolute top-0 left-0 w-full h-[2px] bg-primary/80 shadow-[0_0_15px_#2ecc71] animate-scan-down opacity-80" />
+      <div className="absolute top-0 left-0 w-full h-full bg-primary/5 animate-pulse-slow" />
+      <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-2 py-1 rounded border border-primary/30 text-[10px] font-mono text-primary flex items-center gap-2">
+         <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+         ANALYZING
+      </div>
+      <div className="absolute top-1/4 left-1/4 w-8 h-8 border-t border-l border-primary/50" />
+      <div className="absolute bottom-1/4 right-1/4 w-8 h-8 border-b border-r border-primary/50" />
+    </div>
+  );
 
   if (!isPremium) {
     return (
@@ -357,17 +474,235 @@ export default function Training() {
     );
   }
 
+  // Body Scan Views
+  if (bodyScanViewMode === "scan") {
+    return (
+      <div className="space-y-5 pb-24">
+        <header className="mb-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Body Scan</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Brain className="w-4 h-4 text-primary" strokeWidth={2} />
+              Compare before & after photos
+            </p>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-sm"
+            onClick={resetBodyScan}
+          >
+            Cancel
+          </Button>
+        </header>
+
+        <CockpitCard title="Upload Photos">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                BEFORE
+              </Label>
+              <div 
+                className="aspect-[3/4] bg-muted/10 border-2 border-dashed border-amber-500/50 hover:border-amber-500 rounded-xl relative overflow-hidden transition-all group cursor-pointer"
+                onClick={() => document.getElementById('before-upload')?.click()}
+              >
+                {beforeImage ? (
+                  <>
+                    <img src={beforeImage} alt="Before" className="w-full h-full object-cover" />
+                    <div className="absolute top-2 left-2 bg-amber-500/90 text-amber-50 text-xs px-2 py-1 rounded font-medium">Loaded</div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-amber-500/70 group-hover:text-amber-500 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                      <Camera className="w-6 h-6" strokeWidth={2} />
+                    </div>
+                    <span className="text-xs font-medium">Tap to Upload</span>
+                  </div>
+                )}
+                {isAnalyzing && beforeImage && <AnalysisOverlay />}
+                <input 
+                  id="before-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => handleImageUpload(e, 'before')}
+                  disabled={isAnalyzing}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary" />
+                AFTER
+              </Label>
+              <div 
+                className="aspect-[3/4] bg-muted/10 border-2 border-dashed border-primary/50 hover:border-primary rounded-xl relative overflow-hidden transition-all group cursor-pointer"
+                onClick={() => document.getElementById('after-upload')?.click()}
+              >
+                {afterImage ? (
+                  <>
+                    <img src={afterImage} alt="After" className="w-full h-full object-cover" />
+                    <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded font-medium">Loaded</div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-primary/70 group-hover:text-primary transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                      <Upload className="w-6 h-6" strokeWidth={2} />
+                    </div>
+                    <span className="text-xs font-medium">Tap to Upload</span>
+                  </div>
+                )}
+                {isAnalyzing && afterImage && <AnalysisOverlay />}
+                <input 
+                  id="after-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => handleImageUpload(e, 'after')}
+                  disabled={isAnalyzing}
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button 
+            className="w-full mt-6" 
+            disabled={!beforeImage || !afterImage || isAnalyzing}
+            onClick={startAnalysis}
+          >
+            {isAnalyzing ? (
+              <>
+                <ScanLine className="w-5 h-5 mr-2 animate-pulse" strokeWidth={2} />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Activity className="w-5 h-5 mr-2" strokeWidth={2} />
+                Analyze Transformation
+              </>
+            )}
+          </Button>
+        </CockpitCard>
+      </div>
+    );
+  }
+
+  if (bodyScanViewMode === "results" && analysisComplete) {
+    return (
+      <div className="space-y-5 pb-24">
+        <header className="mb-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Analysis Complete</h1>
+            <p className="text-sm text-muted-foreground">Transformation detected</p>
+          </div>
+          <div className="bg-primary/20 text-primary text-xs px-3 py-1.5 rounded-full font-medium">Success</div>
+        </header>
+
+        <div className="grid grid-cols-2 gap-3">
+          <CockpitCard title="Body Fat">
+            <div className="text-2xl font-bold text-primary">-1.4%</div>
+            <div className="text-xs text-muted-foreground mt-1">Estimated change</div>
+          </CockpitCard>
+          
+          <CockpitCard title="Muscle Definition">
+            <div className="text-2xl font-bold text-secondary">+8.2%</div>
+            <div className="text-xs text-muted-foreground mt-1">Improvement</div>
+          </CockpitCard>
+        </div>
+
+        <CockpitCard title="Analysis Report">
+          <div className="space-y-4">
+            <div className="pb-3 border-b border-border/50">
+              <h4 className="text-sm font-semibold text-foreground mb-1">Shoulder Definition</h4>
+              <p className="text-xs text-muted-foreground">
+                Significant increase in lateral deltoid separation detected. Structural density improved by approximately 12%.
+              </p>
+            </div>
+            
+            <div className="pb-3 border-b border-border/50">
+              <h4 className="text-sm font-semibold text-foreground mb-1">Abdominal Visibility</h4>
+              <p className="text-xs text-muted-foreground">
+                Mid-section vascularity markers detected. Lower abdominal definition has increased visibility.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-foreground mb-1">Posture Alignment</h4>
+              <p className="text-xs text-muted-foreground">
+                Thoracic extension improved. Shoulder internal rotation reduced compared to baseline image.
+              </p>
+            </div>
+          </div>
+        </CockpitCard>
+
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            className="flex-1" 
+            onClick={resetBodyScan}
+          >
+            New Scan
+          </Button>
+          <Button 
+            className="flex-1"
+          >
+            Save to Log
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-5 pb-24">
       <header className="mb-6 flex items-center gap-3">
          <div className="h-10 w-10 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10">
-          <Dumbbell className="text-primary w-5 h-5" />
+          <Dumbbell className="text-primary w-5 h-5" strokeWidth={2} />
         </div>
         <div>
           <h1 className="text-xl font-bold tracking-widest text-foreground uppercase">Training Brief</h1>
           <p className="text-xs text-muted-foreground font-mono">PHYSICAL READINESS</p>
         </div>
       </header>
+
+      {/* Body Scan Section */}
+      {isPremium ? (
+        <CockpitCard title="Body Scan">
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Compare before & after photos to track your physical transformation
+            </p>
+            <Button 
+              className="w-full"
+              onClick={() => setBodyScanViewMode("scan")}
+            >
+              <Camera className="w-5 h-5 mr-2" strokeWidth={2} />
+              Start Body Scan
+              <ArrowRight className="w-4 h-4 ml-2" strokeWidth={2} />
+            </Button>
+          </div>
+        </CockpitCard>
+      ) : (
+        <CockpitCard title="Body Scan">
+          <div className="space-y-4">
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-center">
+              <Lock className="w-8 h-8 text-amber-400 mx-auto mb-2" strokeWidth={2} />
+              <p className="text-sm text-muted-foreground mb-4">
+                AI-powered body composition tracking is available with FlightFuel Premium
+              </p>
+              <Button 
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                onClick={() => setLocation('/upgrade')}
+              >
+                <Sparkles className="w-5 h-5 mr-2" strokeWidth={2} fill="currentColor" />
+                Upgrade to Premium
+              </Button>
+            </div>
+          </div>
+        </CockpitCard>
+      )}
 
       {/* Configuration Panel */}
       <CockpitCard title="Mission Parameters">
@@ -447,25 +782,153 @@ export default function Training() {
       </CockpitCard>
 
       {/* Generated Plan */}
-      {generatedPlan && (
+      {generatedPlan && activeSessionIndex === null && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-500">
            <div className="flex items-center justify-between border-b border-primary/30 pb-2">
               <h2 className="text-sm font-bold uppercase tracking-widest text-primary">Active Protocol</h2>
               <span className="text-[10px] font-mono text-muted-foreground">WK-{Math.floor(Math.random() * 52) + 1}</span>
            </div>
 
-           {generatedPlan.map((session, i) => (
-             <CockpitCard key={i} title={`Session ${session.day} // ${session.type}`} className={`border-border/60 ${session.completed ? 'opacity-70 border-primary/30' : ''}`}>
+           <div className="grid grid-cols-1 gap-3">
+             {generatedPlan.map((session, i) => (
+               <CockpitCard 
+                 key={i} 
+                 className={cn(
+                   "cursor-pointer transition-all hover:border-primary/50 hover:bg-primary/5",
+                   session.completed && "opacity-60"
+                 )}
+                 onClick={() => !session.completed && confirmStartSession(i)}
+               >
+                 <div className="flex items-center justify-between">
+                   <div className="flex-1">
+                     <div className="flex items-center gap-3 mb-1">
+                       <h3 className="text-sm font-bold text-foreground">Session {session.day}</h3>
+                       {session.completed && (
+                         <CheckCircle2 className="w-4 h-4 text-primary" strokeWidth={2} />
+                       )}
+                     </div>
+                     <p className="text-xs text-muted-foreground font-mono uppercase">{session.type}</p>
+                     <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+                       <span className="flex items-center gap-1">
+                         <Activity className="w-3 h-3" />
+                         {session.exercises.length} exercises
+                       </span>
+                       <span className="flex items-center gap-1">
+                         <Timer className="w-3 h-3" />
+                         {prefs.sessionLength} min
+                       </span>
+                     </div>
+                   </div>
+                   {!session.completed && (
+                     <Button 
+                       variant="ghost" 
+                       size="sm"
+                       className="ml-2"
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         confirmStartSession(i);
+                       }}
+                     >
+                       <Play className="w-4 h-4 mr-1" strokeWidth={2} />
+                       Start
+                     </Button>
+                   )}
+                 </div>
+               </CockpitCard>
+             ))}
+           </div>
+        </div>
+      )}
+
+      {/* Start Session Confirmation Dialog */}
+      {generatedPlan && pendingSessionIndex !== null && (
+        <AlertDialog open={pendingSessionIndex !== null} onOpenChange={(open) => !open && setPendingSessionIndex(null)}>
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Play className="w-5 h-5 text-primary" strokeWidth={2} />
+                Start Training Session?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3 pt-2">
+                {generatedPlan[pendingSessionIndex] && (
+                  <>
+                    <div>
+                      <p className="font-semibold text-foreground mb-1">
+                        Session {generatedPlan[pendingSessionIndex].day} - {generatedPlan[pendingSessionIndex].type}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                        <span className="flex items-center gap-1">
+                          <Activity className="w-4 h-4" />
+                          {generatedPlan[pendingSessionIndex].exercises.length} exercises
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Timer className="w-4 h-4" />
+                          {prefs.sessionLength} min
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm">
+                      The session timer will start immediately when you confirm. You can end the session at any time.
+                    </p>
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => pendingSessionIndex !== null && startSession(pendingSessionIndex)}>
+                <Play className="w-4 h-4 mr-2" strokeWidth={2} />
+                Start Session
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Active Session View */}
+      {generatedPlan && activeSessionIndex !== null && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-500">
+          {(() => {
+            const session = generatedPlan[activeSessionIndex];
+            return (
+              <>
+                {/* Session Header with Timer */}
+                <CockpitCard>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-foreground">Session {session.day}</h2>
+                      <p className="text-sm text-muted-foreground font-mono uppercase">{session.type}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-2 text-primary mb-1">
+                        <Timer className="w-5 h-5" strokeWidth={2} />
+                        <span className="text-2xl font-bold font-mono">{formatTime(elapsedTime)}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-mono">Session Duration</p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full" 
+                    variant="destructive"
+                    onClick={() => endSession(activeSessionIndex)}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" strokeWidth={2} />
+                    End Session
+                  </Button>
+                </CockpitCard>
+
+                {/* Exercises */}
                 <div className="space-y-3">
-                   {session.exercises.map((ex, j) => {
-                     const currentName = ex.name;
-                     const originalName = Object.keys(ALTERNATIVES).find(key => ALTERNATIVES[key as keyof typeof ALTERNATIVES].includes(currentName) || key === currentName) || currentName;
-                     const isSwapped = currentName !== originalName && ALTERNATIVES[originalName as keyof typeof ALTERNATIVES]?.includes(currentName);
-                     
-                     return (
-                       <div key={j} className="bg-muted/5 p-3 rounded-xl border border-border/40 relative group">
-                          <div className="flex justify-between items-start mb-3">
-                             <div className="flex flex-col">
+                  {session.exercises.map((ex, j) => {
+                    const currentName = ex.name;
+                    const originalName = Object.keys(ALTERNATIVES).find(key => ALTERNATIVES[key as keyof typeof ALTERNATIVES].includes(currentName) || key === currentName) || currentName;
+                    const isSwapped = currentName !== originalName && ALTERNATIVES[originalName as keyof typeof ALTERNATIVES]?.includes(currentName);
+                    
+                    return (
+                      <CockpitCard key={j}>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start">
+                             <div className="flex flex-col flex-1">
                                 <div className="flex items-center gap-2">
                                   <span className={cn("font-bold text-sm", isSwapped && "text-primary")}>
                                      {currentName}
@@ -473,8 +936,11 @@ export default function Training() {
                                   {ex.originalDef && !isSwapped && (
                                     <Dialog>
                                       <DialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-primary">
-                                          <Info className="w-3 h-3" />
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary relative">
+                                          <Info className="w-4 h-4" strokeWidth={2} />
+                                          {ex.originalDef.youtubeId && (
+                                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+                                          )}
                                         </Button>
                                       </DialogTrigger>
                                       <DialogContent className="sm:max-w-md">
@@ -490,11 +956,12 @@ export default function Training() {
                                         <div className="rounded-lg overflow-hidden mt-2 bg-black">
                                           {ex.originalDef.youtubeId ? (
                                             <iframe
-                                              src={`https://www.youtube.com/embed/${ex.originalDef.youtubeId}?rel=0`}
+                                              src={`https://www.youtube.com/embed/${ex.originalDef.youtubeId}?rel=0&enablejsapi=1`}
                                               title={currentName}
-                                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                               allowFullScreen
                                               className="w-full aspect-video"
+                                              frameBorder="0"
                                             />
                                           ) : (
                                             <img 
@@ -529,16 +996,14 @@ export default function Training() {
                                     {isSwapped && <span>• ALT FOR: {originalName.toUpperCase()}</span>}
                                 </div>
                              </div>
-                             {!session.completed && (
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-6 w-6 opacity-50 hover:opacity-100 -mr-2 -mt-2"
-                                    onClick={() => handleSwap(i, j, originalName, currentName)}
-                                >
-                                    <RefreshCw className="w-3 h-3" />
-                                </Button>
-                             )}
+                             <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 opacity-50 hover:opacity-100"
+                                onClick={() => handleSwap(activeSessionIndex, j, originalName, currentName)}
+                             >
+                                <RefreshCw className="w-3 h-3" />
+                             </Button>
                           </div>
                           
                           <div className="space-y-1">
@@ -550,34 +1015,24 @@ export default function Training() {
                                     <div>Avg Pace</div>
                                  </div>
                                  <div className="grid grid-cols-3 gap-2 items-center">
-                                    {session.completed ? (
-                                        <>
-                                          <div className="text-center text-xs font-mono font-bold">{ex.cardioLog?.totalDistance || '-'}</div>
-                                          <div className="text-center text-xs font-mono font-bold">{ex.cardioLog?.totalTime || '-'}</div>
-                                          <div className="text-center text-xs font-mono font-bold">{ex.cardioLog?.avgPace || '-'}</div>
-                                        </>
-                                    ) : (
-                                        <>
-                                          <Input 
-                                              className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
-                                              value={ex.cardioLog?.totalDistance || ""}
-                                              placeholder="5000m"
-                                              onChange={(e) => updateCardioLog(i, j, 'totalDistance', e.target.value)}
-                                          />
-                                          <Input 
-                                              className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
-                                              value={ex.cardioLog?.totalTime || ""}
-                                              placeholder="20:00"
-                                              onChange={(e) => updateCardioLog(i, j, 'totalTime', e.target.value)}
-                                          />
-                                          <Input 
-                                              className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
-                                              value={ex.cardioLog?.avgPace || ""}
-                                              placeholder="2:00/500m"
-                                              onChange={(e) => updateCardioLog(i, j, 'avgPace', e.target.value)}
-                                          />
-                                        </>
-                                    )}
+                                    <Input 
+                                        className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                        value={ex.cardioLog?.totalDistance || ""}
+                                        placeholder="5000m"
+                                        onChange={(e) => updateCardioLog(activeSessionIndex, j, 'totalDistance', e.target.value)}
+                                    />
+                                    <Input 
+                                        className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                        value={ex.cardioLog?.totalTime || ""}
+                                        placeholder="20:00"
+                                        onChange={(e) => updateCardioLog(activeSessionIndex, j, 'totalTime', e.target.value)}
+                                    />
+                                    <Input 
+                                        className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                        value={ex.cardioLog?.avgPace || ""}
+                                        placeholder="2:00/500m"
+                                        onChange={(e) => updateCardioLog(activeSessionIndex, j, 'avgPace', e.target.value)}
+                                    />
                                  </div>
                                  <div className="text-[10px] font-mono text-muted-foreground/50 text-center mt-2">
                                     Target: {ex.targetSets} x {ex.targetReps} with {ex.rest} work:rest
@@ -595,56 +1050,31 @@ export default function Training() {
                                      <div key={k} className="grid grid-cols-[30px_1fr_1fr_1fr] gap-2 items-center">
                                         <div className="text-center text-xs font-mono text-muted-foreground/70">{k + 1}</div>
                                         <div className="text-center text-xs font-mono text-muted-foreground/50">{ex.targetReps}</div>
-                                        
-                                        {session.completed ? (
-                                            <div className="text-center text-xs font-mono font-bold">{set.reps || '-'}</div>
-                                        ) : (
-                                            <Input 
-                                                className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
-                                                value={set.reps}
-                                                placeholder={ex.targetReps.split('-')[0]}
-                                                onChange={(e) => updateSet(i, j, k, 'reps', e.target.value)}
-                                            />
-                                        )}
-
-                                        {session.completed ? (
-                                            <div className="text-center text-xs font-mono font-bold">{set.weight || '-'}</div>
-                                        ) : (
-                                            <Input 
-                                                type="number"
-                                                className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
-                                                value={set.weight}
-                                                placeholder="0"
-                                                onChange={(e) => updateSet(i, j, k, 'weight', e.target.value)}
-                                            />
-                                        )}
+                                        <Input 
+                                            className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                            value={set.reps}
+                                            placeholder={ex.targetReps.split('-')[0]}
+                                            onChange={(e) => updateSet(activeSessionIndex, j, k, 'reps', e.target.value)}
+                                        />
+                                        <Input 
+                                            className="h-7 text-xs p-1 text-center font-mono placeholder:text-muted-foreground/20 bg-background/50" 
+                                            value={set.weight}
+                                            placeholder="0"
+                                            onChange={(e) => updateSet(activeSessionIndex, j, k, 'weight', e.target.value)}
+                                        />
                                      </div>
                                  ))}
                                </>
                              )}
                           </div>
-                       </div>
-                     );
-                   })}
-                   
-                   <div className="flex justify-between items-center pt-2 border-t border-border/30 mt-2">
-                      <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground opacity-70">
-                         <Timer className="w-3 h-3" /> {prefs.sessionLength}m | RPE 7-8
-                      </div>
-                      
-                      {!session.completed ? (
-                          <Button size="sm" className="h-7 text-[10px] font-mono tracking-wider" onClick={() => saveSession(i)}>
-                              <Save className="w-3 h-3 mr-2" /> LOG SESSION
-                          </Button>
-                      ) : (
-                          <div className="flex items-center text-primary text-[10px] font-bold font-mono uppercase tracking-wider">
-                              <CheckCircle2 className="w-3 h-3 mr-1.5" /> Logged
-                          </div>
-                      )}
-                   </div>
+                        </div>
+                      </CockpitCard>
+                    );
+                  })}
                 </div>
-             </CockpitCard>
-           ))}
+              </>
+            );
+          })()}
         </div>
       )}
     </div>

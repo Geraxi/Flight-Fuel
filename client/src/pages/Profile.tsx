@@ -194,7 +194,7 @@ export default function Profile() {
             size="sm"
             className="text-destructive hover:text-destructive hover:bg-destructive/10"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-5 h-5" strokeWidth={2} />
           </Button>
         </SignOutButton>
       </header>
@@ -203,7 +203,7 @@ export default function Profile() {
       <CockpitCard title="Medical Certificate Readiness">
          <div className="space-y-4">
             <div className="bg-muted/10 p-3 rounded border border-border flex gap-3 items-start">
-               <AlertTriangle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+               <AlertTriangle className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" strokeWidth={2} />
                <p className="text-[10px] text-muted-foreground leading-tight">
                   <span className="font-bold">DISCLAIMER:</span> This tool monitors personal biometric trends only. It DOES NOT provide medical advice or determine fitness for duty. Always consult an AME/DAME for official certification.
                </p>
@@ -232,7 +232,7 @@ export default function Profile() {
 
             <div className="space-y-2">
                <Label htmlFor="rhr" className="text-xs font-mono uppercase text-muted-foreground flex items-center gap-2">
-                  <HeartPulse className="w-3 h-3" /> Resting Heart Rate (Optional)
+                  <HeartPulse className="w-4 h-4" strokeWidth={2} /> Resting Heart Rate (Optional)
                </Label>
                <Input 
                   id="rhr" 
@@ -255,7 +255,7 @@ export default function Profile() {
                         medicalReadiness.status === 'amber' ? 'bg-amber-500/20 text-amber-500' :
                         'bg-destructive/20 text-destructive'
                     }`}>
-                        <Stethoscope className="w-6 h-6" />
+                        <Stethoscope className="w-7 h-7" strokeWidth={2} />
                     </div>
                     <div>
                         <div className={`font-bold font-mono uppercase text-sm mb-1 ${
@@ -278,7 +278,7 @@ export default function Profile() {
         <CockpitCard title="Biometric Analysis" className="border-primary/50 bg-primary/5 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/20 rounded-full">
-              <Activity className="w-6 h-6 text-primary" />
+              <Activity className="w-7 h-7 text-primary" strokeWidth={2} />
             </div>
             <div>
               <div className="text-sm text-muted-foreground font-mono uppercase mb-1">BMI Calculation</div>
@@ -388,7 +388,7 @@ export default function Profile() {
       </CockpitCard>
 
       <Button onClick={handleSave} className="w-full font-mono tracking-wider" size="lg" disabled={saving}>
-        <Save className="w-4 h-4 mr-2" /> {saving ? "SAVING..." : "SAVE PROFILE"}
+        <Save className="w-5 h-5 mr-2" strokeWidth={2} /> {saving ? "SAVING..." : "SAVE PROFILE"}
       </Button>
 
       {/* Subscription Section */}
@@ -399,7 +399,7 @@ export default function Profile() {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-amber-500/20 rounded-full">
-                <Crown className="w-6 h-6 text-amber-400" />
+                <Crown className="w-7 h-7 text-amber-400" strokeWidth={2} fill="currentColor" />
               </div>
               <div className="flex-1">
                 <div className="font-mono font-bold text-amber-400">FlightFuel Premium</div>
@@ -412,7 +412,7 @@ export default function Profile() {
               onClick={() => setLocation('/upgrade')}
               data-testid="button-manage-subscription"
             >
-              <Settings className="w-4 h-4 mr-2" /> Manage Subscription
+              <Settings className="w-5 h-5 mr-2" strokeWidth={2} /> Manage Subscription
             </Button>
           </div>
         ) : (
@@ -420,7 +420,7 @@ export default function Profile() {
             <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-amber-500/20 rounded-lg">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  <Sparkles className="w-6 h-6 text-amber-400" strokeWidth={2} fill="currentColor" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-mono font-bold text-white">Upgrade to Premium</h4>
@@ -438,7 +438,7 @@ export default function Profile() {
                 onClick={() => setLocation('/upgrade')}
                 data-testid="button-upgrade-premium"
               >
-                <Sparkles className="w-4 h-4 mr-2" /> Upgrade Now - $9.99/mo
+                <Sparkles className="w-5 h-5 mr-2" strokeWidth={2} fill="currentColor" /> Upgrade Now - $9.99/mo
               </Button>
             </div>
           </div>
@@ -458,10 +458,10 @@ export default function Profile() {
             <div className="flex-1">
               <div className="font-mono text-base font-bold">{clerkUser?.fullName || authUser?.username}</div>
               <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <Mail className="w-3 h-3" /> {clerkUser?.primaryEmailAddress?.emailAddress || "No email"}
+                <Mail className="w-4 h-4" strokeWidth={2} /> {clerkUser?.primaryEmailAddress?.emailAddress || "No email"}
               </div>
               <div className="text-[10px] text-primary/70 mt-1 flex items-center gap-1">
-                <Shield className="w-3 h-3" /> Pilot Account
+                <Shield className="w-4 h-4" strokeWidth={2} /> Pilot Account
               </div>
             </div>
           </div>
@@ -496,7 +496,7 @@ export default function Profile() {
                 onClick={() => window.open("https://flightfuel.app/privacy", "_blank")}
                 data-testid="link-privacy"
               >
-                <Shield className="w-3 h-3 mr-2" /> Privacy Policy
+                <Shield className="w-4 h-4 mr-2" strokeWidth={2} /> Privacy Policy
               </Button>
               <Button 
                 variant="outline" 
@@ -505,7 +505,7 @@ export default function Profile() {
                 onClick={() => window.open("https://flightfuel.app/terms", "_blank")}
                 data-testid="link-terms"
               >
-                <ExternalLink className="w-3 h-3 mr-2" /> Terms of Service
+                <ExternalLink className="w-4 h-4 mr-2" strokeWidth={2} /> Terms of Service
               </Button>
               <Button 
                 variant="outline" 
@@ -514,7 +514,7 @@ export default function Profile() {
                 onClick={() => window.open("https://flightfuel.app/help", "_blank")}
                 data-testid="link-help"
               >
-                <Settings className="w-3 h-3 mr-2" /> Help Center
+                <Settings className="w-4 h-4 mr-2" strokeWidth={2} /> Help Center
               </Button>
               <Button 
                 variant="outline" 
@@ -523,7 +523,7 @@ export default function Profile() {
                 onClick={() => window.open("https://flightfuel.app/contact", "_blank")}
                 data-testid="link-contact"
               >
-                <Mail className="w-3 h-3 mr-2" /> Contact Support
+                <Mail className="w-4 h-4 mr-2" strokeWidth={2} /> Contact Support
               </Button>
             </div>
           </div>
@@ -534,7 +534,7 @@ export default function Profile() {
             <div className="text-xs font-mono uppercase text-muted-foreground mb-2">Session</div>
             <SignOutButton>
               <Button variant="outline" className="w-full font-mono" data-testid="button-signout">
-                <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                <LogOut className="w-5 h-5 mr-2" strokeWidth={2} /> Sign Out
               </Button>
             </SignOutButton>
           </div>
@@ -544,7 +544,7 @@ export default function Profile() {
       <CockpitCard title="Account Management" className="mt-4 border-destructive/30">
         <div className="space-y-4">
           <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded flex gap-3 items-start">
-            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" strokeWidth={2} />
             <p className="text-[10px] text-muted-foreground leading-tight">
               <span className="font-bold text-amber-500">CAUTION:</span> These actions affect your account status. Suspended accounts can be reactivated, but deleted accounts are permanently removed.
             </p>
@@ -558,7 +558,7 @@ export default function Profile() {
                   className="w-full font-mono justify-start border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
                   data-testid="button-suspend"
                 >
-                  <PauseCircle className="w-4 h-4 mr-2" /> Suspend Account
+                  <PauseCircle className="w-5 h-5 mr-2" strokeWidth={2} /> Suspend Account
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -592,7 +592,7 @@ export default function Profile() {
                   className="w-full font-mono justify-start border-destructive/30 text-destructive hover:bg-destructive/10"
                   data-testid="button-delete"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+                  <Trash2 className="w-5 h-5 mr-2" strokeWidth={2} /> Delete Account
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>

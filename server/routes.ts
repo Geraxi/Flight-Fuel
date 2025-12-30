@@ -330,6 +330,19 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/health/range/:startDate/:endDate", requireAuth(), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const logs = await storage.getHealthLogsByDateRange(userId, req.params.startDate, req.params.endDate);
+      res.json(logs);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/health", requireAuth(), async (req, res, next) => {
     try {
       const userId = getUserId(req);
