@@ -33,6 +33,7 @@ Clerk env vars (`VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`) must be set be
 ### Gotchas
 
 - No ESLint or test framework is configured in this project.
+- **CLERK_SECRET_KEY and Cursor "Redacted Secret" type**: Adding `CLERK_SECRET_KEY` as a "Redacted Secret" in Cursor injects Unicode bullet characters (U+2022) instead of the real value. Use the plain **"Secret"** type instead, or add the key to `/workspace/.env` (loaded by `dotenv/config` in `server/index.ts`). If using `.env`, unset the env var first (`unset CLERK_SECRET_KEY`) so dotenv's value takes precedence.
 - Stripe initialization depends on Replit Connectors (`REPLIT_CONNECTORS_HOSTNAME`, `REPL_IDENTITY`). It fails gracefully in local/cloud environments—the rest of the app works without it.
 - The Vite config conditionally loads Replit-specific plugins (`@replit/vite-plugin-cartographer`, `@replit/vite-plugin-dev-banner`) only when `REPL_ID` is defined; these are safely skipped outside Replit.
 - The `stripe-replit-sync` package runs its own migrations on startup (`runMigrations`). This creates a `stripe` schema in PostgreSQL on first run—this is automatic and expected.
